@@ -139,11 +139,15 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import BASE_URL from '../Config/api';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 const Login = ({ navigation }) => {
   const [phone_no, setPhoneNo] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -155,7 +159,7 @@ const Login = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${BASE_URL}/login/`, {
+      const response = await fetch(`${BASE_URL}/api/login/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone_no, password }),
@@ -163,7 +167,6 @@ const Login = ({ navigation }) => {
 
       const data = await response.json();
       if (data.success) {
-        console.log(data)
         await AsyncStorage.setItem('user', JSON.stringify(data.user));
         navigation.reset({ index: 0, routes: [{ name: 'MainApp' }] });
       } else {
@@ -176,94 +179,96 @@ const Login = ({ navigation }) => {
     }
   };
 
-  return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'android' ? 'height' : 'padding'}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={{ flex: 1, backgroundColor: 'white' }}>
+   return (
+  <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1, backgroundColor: 'white' }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'android' ? 0 : 20}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
             contentContainerStyle={{ flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
           >
-            <View style={styles.curvedHeader}>
-              <Image source={require('../assets/login_image_png.png')} style={styles.farmerImage} />
-            </View>
-
-            <ImageBackground
-              source={require('../assets/register_image_2.png')}
-              style={styles.background}
-              resizeMode="cover"
-            >
-              <View style={styles.formContainer}>
-                <View style={styles.logoCircle}>
-                  <Image source={require('../assets/Logo_type_1.png')} style={styles.logoText} />
-                </View>
-
-                <Text style={styles.title}>LOGIN</Text>
-                <Text style={styles.subtitle}>Enter your credentials</Text>
-
-                <TextInput
-                  placeholder="Phone Number"
-                  placeholderTextColor="black"
-                  value={phone_no}
-                  onChangeText={setPhoneNo}
-                  keyboardType="phone-pad"
-                  style={styles.input}
-                />
-
-                <TextInput
-                  placeholder="Password"
-                  placeholderTextColor="black"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  style={styles.input}
-                />
-
-                <TouchableOpacity
-                  style={[styles.registerButton, loading && { opacity: 0.6 }]}
-                  onPress={handleLogin}
-                  disabled={loading}
-                >
-                  <Text style={styles.registerButtonText}>
-                    {loading ? 'Logging in...' : 'Login'}
-                  </Text>
-                </TouchableOpacity>
-
-                <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 10 }}>
-                  <Text style={styles.footerText}>Don't have an account? </Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                    <Text style={styles.loginLink}>Register</Text>
-                  </TouchableOpacity>
-                </View>
+            <View style={{ flex: 1 }}>
+              <View style={styles.curvedHeader}>
+                <Image source={require('../assets/login_image_png.png')} style={styles.farmerImage} />
               </View>
-            </ImageBackground>
+
+              <ImageBackground
+                source={require('../assets/register_image_2.png')}
+                style={styles.background}
+                resizeMode="cover"
+              >
+                <View style={styles.formContainer}>
+                  <View style={styles.logoCircle}>
+                    <Image source={require('../assets/Logo_type_1.png')} style={styles.logoText} />
+                  </View>
+
+                  <Text style={styles.title}>LOGIN</Text>
+                  <Text style={styles.subtitle}>Enter your credentials</Text>
+
+                  <TextInput
+                    placeholder="Phone Number"
+                    placeholderTextColor="black"
+                    value={phone_no}
+                    onChangeText={setPhoneNo}
+                    keyboardType="phone-pad"
+                    style={styles.input}
+                  />
+
+                  <View style={styles.passwordContainer}>
+                    <TextInput
+                      placeholder="Password"
+                      placeholderTextColor="black"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPassword}
+                      style={styles.inputPassword}
+                    />
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                      <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={24} color="grey" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <TouchableOpacity
+                    style={[styles.registerButton, loading && { opacity: 0.6 }]}
+                    onPress={handleLogin}
+                    disabled={loading}
+                  >
+                    <Text style={styles.registerButtonText}>
+                      {loading ? 'Logging in...' : 'Login'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 10 }}>
+                    <Text style={styles.footerText}>Don't have an account? </Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                      <Text style={styles.loginLink}>Register</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </ImageBackground>
+            </View>
           </ScrollView>
-        </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
-export default Login;
 
+
+export default Login;
 
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    height: '100%',
     width: '100%',
-    position: 'absolute',
-    top: 200
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject, // fills entire background
-    backgroundColor: 'rgba(8, 238, 180, 0.7)', // green with 40% opacity
+    minHeight: '100%',
+    // position: 'absolute',
+    // top: 140,
   },
   curvedHeader: {
     backgroundColor: '#ffffff',
@@ -271,103 +276,75 @@ const styles = StyleSheet.create({
     margin: 0,
     paddingTop: 0,
   },
-  svgCurve: {
-    position: 'absolute',
-    top: 0,
-  },
   farmerImage: {
-    width: 330,
-    height: 245,
+    width: 300,
+    height: 200,
     marginTop: 0,
-    top: 40,
+    top: 20,
     resizeMode: 'cover',
-    zIndex: 1
+    zIndex: 1,
   },
   formContainer: {
     padding: 10,
     alignItems: 'center',
-    marginTop: 90,
-    marginBottom: 20
+    marginTop: 70,
   },
+
   logoCircle: {
-    width: 120,
-    height: 120,
+    width: 100,
+    height: 100,
     borderRadius: 30,
-    // backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -30,
+    marginTop: -40,
     zIndex: 2,
   },
   logoText: {
-    fontWeight: 'bold',
-    color: '#ffffff',
-    width: 180,
-    height: 180,
-    borderRadius: 40,
+    width: 150,
+    height: 150,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#ffffff',
-    top: 10,
+    top: 20,
     marginBottom: 5,
   },
   subtitle: {
     fontSize: 16,
     color: '#ffffff',
     marginBottom: 5,
+    marginTop: 10,
   },
   input: {
     width: '85%',
     height: 50,
     backgroundColor: '#ffffffff',
     borderRadius: 8,
-    paddingHorizontal: 7,
-    marginVertical: 7,
-
+    paddingHorizontal: 9,
+    marginVertical: 10,
   },
-  //cascading dropdown
-
   dropdown: {
     width: '85%',
+    height: 40,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    paddingHorizontal: 9,
+    marginVertical: 4,
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    marginBottom: 7,
-    backgroundColor: '#f9f9f9',
-    fontcolor: '#000000ff',
+    justifyContent: 'center',
   },
-
-  dropdown1: {
-    width: '91%',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    marginBottom: 5,
-    backgroundColor: '#f9f9f9',
-  },
-
   row: {
     width: '90%',
     marginLeft: 18,
     flexDirection: 'row',
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
     gap: 5,
   },
-
   column: {
     flex: 2,
   },
-  // button: {
-  //   backgroundColor: '#2e8b57',
-  //   padding: 15,
-  //   borderRadius: 8,
-  //   alignItems: 'center',
-  //   marginTop: 10,
-  // },
   registerButton: {
     backgroundColor: '#009b77',
     padding: 10,
@@ -381,15 +358,35 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-footerText: {
-  fontSize: 16,
-  color: 'black',
-},
+  footerText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  loginLink: {
+    fontSize: 16,
+    color: 'white',
+    textDecorationLine: 'underline',
+  },
 
-loginLink: {
-  fontSize: 16,
-  color: 'white',
-  textDecorationLine: 'underline',
-}
+  //passowrd code
+
+  passwordContainer: {
+    width: '85%',
+    height: 50,
+    backgroundColor: '#ffffffff',
+    borderRadius: 8,
+    paddingHorizontal: 9,
+    marginVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  inputPassword: {
+    flex: 1,
+    color: 'black',
+  },
+
+
 
 });
