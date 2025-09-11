@@ -22,6 +22,7 @@ import { Picker } from '@react-native-picker/picker';
 import BASE_URL from '../Config/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 
 
@@ -109,7 +110,7 @@ const Register = () => {
     };
 
     try {
-      const res = await fetch(`${BASE_URL}/api/registration/`, {
+      const res = await fetch(`${BASE_URL}/api/registration`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -143,26 +144,24 @@ const Register = () => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
-      <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: 'white' }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'android' ? 0 : 20}
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#548c5c" }}>
+      <KeyboardAwareScrollView
+        style={{ flex: 1, backgroundColor: "white" }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={20}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} // ✅ Add paddingBottom here only
-            keyboardShouldPersistTaps="handled"
-          >
+          <View style={{ flexGrow: 1, backgroundColor: 'white' }}>
+            <View style={styles.curvedHeader}>
+              <Image
+                source={require('../assets/register_page_image.png')}
+                style={styles.farmerImage}
+              />
+            </View>
 
-            <View style={{ flex: 1, backgroundColor: 'white' }}>
-              <View style={styles.curvedHeader}>
-                <Image
-                  source={require('../assets/register_page_image.png')}
-                  style={styles.farmerImage}
-                />
-              </View>
-
+            <View style={{ flexGrow: 1 }}>
               <ImageBackground
                 source={require('../assets/login_image_2.png')}
                 style={styles.background}
@@ -200,7 +199,7 @@ const Register = () => {
                     placeholderTextColor="black"
                     value={phone_no}
                     onChangeText={text => handleChange('phone_no', text)}
-                    keyboardType="phone-pad"
+                    // keyboardType="phone-pad"
                     style={styles.input}
                   />
 
@@ -333,9 +332,9 @@ const Register = () => {
                           }}
                           dropdownIconColor="black"
                         >
-                          <Picker.Item label="Select Village" value="" color="black" />
+                          <Picker.Item label="Select Village" value="" />
                           {villages.map(v => (
-                            <Picker.Item key={v} label={v} value={v} color="black" />
+                            <Picker.Item key={v} label={v} value={v} />
                           ))}
                         </Picker>
 
@@ -357,9 +356,10 @@ const Register = () => {
                 </View>
               </ImageBackground>
             </View>
-          </ScrollView>
+          </View>
+
         </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 };
@@ -373,6 +373,7 @@ const styles = StyleSheet.create({
     minHeight: '100%',
     // position: 'absolute',
     // top: 140,
+    flexGrow: 1
   },
   curvedHeader: {
     backgroundColor: '#ffffff',
@@ -467,7 +468,7 @@ const styles = StyleSheet.create({
     color: 'black',
   },
   loginLink: {
-    fontSize: 16,
+    fontSize: 18,
     color: 'white',
     textDecorationLine: 'underline',
   },
