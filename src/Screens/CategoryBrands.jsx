@@ -76,15 +76,19 @@ export default function CategoriesPage() {
         style={styles.card}
         onPress={() => {
           if (all) {
-            // Clicked a category → show its brands
             navigation.navigate('CategoryBrands', {
               categoryId: item.id, // Make sure this matches backend ID
               categoryName: item.category_name,
               all: false,
             });
           } else {
-            // Clicked a brand → navigate to brand details or alert
-            alert(`Clicked brand: ${name}`);
+            // Clicked a brand → show its models
+            navigation.navigate('ModelsPage', {
+              brandId: item.id,          // Pass brand ID
+              brandName: item.brand_name, // Pass brand name
+              categoryId: categoryId,    // Pass category too
+              categoryName: categoryName,
+            });
           }
         }}
       >
@@ -113,12 +117,21 @@ export default function CategoriesPage() {
       <SearchwithCart
         searchValue={query}
         onSearchChange={setQuery}
-        onCartPress={() => alert('Cart pressed!')}
+        onCartPress={() => navigation.navigate("CartScreen")}
       />
 
       {/* Items List */}
       {loading ? (
         <ActivityIndicator size="large" color="green" style={{ marginTop: 50 }} />
+      ) : filteredItems.length === 0 ? (   
+        <View style={styles.noDataContainer}>
+          <Image
+            source={require("../assets/No-Product.png")}
+            style={styles.noDataImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.noDataText}>No Categories Available</Text>
+        </View>
       ) : (
         <FlatList
           data={filteredItems}
@@ -178,4 +191,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     flexWrap: 'wrap',
   },
+
+   noDataContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 50,
+  },
+  noDataImage: {
+    width: 180,
+    height: 180,
+    marginBottom: 15,
+  },
+  noDataText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666",
+  },
+
 });

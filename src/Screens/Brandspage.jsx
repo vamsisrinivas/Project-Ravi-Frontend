@@ -271,7 +271,7 @@ export default function BrandsPage() {
       <SearchwithCart
         searchValue={query}
         onSearchChange={setQuery}
-        onCartPress={() => alert("Cart pressed!")}
+        onCartPress={() => navigation.navigate("CartScreen")}
       />
 
       {/* Brand List */}

@@ -143,7 +143,7 @@ const Home = () => {
                   <SearchwithCart
                     searchValue={query}
                     onSearchChange={setQuery}
-                    onCartPress={() => alert("Cart pressed!")}
+                    onCartPress={() => navigation.navigate("CartScreen")}
                   />
                 </View>
               </View>

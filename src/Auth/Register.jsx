@@ -23,6 +23,7 @@ import BASE_URL from '../Config/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import Toast from 'react-native-toast-message';
 
 
 
@@ -80,12 +81,30 @@ const Register = () => {
             setVillages([]);
             setCities([]);
             setFormData(prev => ({ ...prev, village: '', city: '' }));
-            ToastAndroid.show('Invalid pincode! Please check and try again.', ToastAndroid.SHORT);
+            // ToastAndroid.show('Invalid pincode! Please check and try again.', ToastAndroid.SHORT);
+
+            Toast.show({
+              type: "error",
+              text1: "Invalid pincode! Please check and try again. ✅",
+              position: "bottom",
+              visibilityTime: 3000,
+              text1Style: { fontSize: 15, fontWeight: "bold" }, // Large toast
+              text2Style: { fontSize: 12 },
+            });
           }
         })
         .catch(err => {
           console.error(err);
-          ToastAndroid.show('Failed to fetch location data!', ToastAndroid.SHORT);
+          // ToastAndroid.show('Failed to fetch location data!', ToastAndroid.SHORT);
+
+          Toast.show({
+            type: "error",
+            text1: "Failed to fetch location data! ✅",
+            position: "bottom",
+            visibilityTime: 3000,
+            text1Style: { fontSize: 15, fontWeight: "bold" }, // Large toast
+            text2Style: { fontSize: 12 },
+          });
         });
     }
   }, [pincode]);
@@ -97,6 +116,15 @@ const Register = () => {
   const handleRegister = async () => {
     if (password !== confirm_password) {
       ToastAndroid.show('Passwords do not match!', ToastAndroid.SHORT);
+
+      Toast.show({
+        type: "error",
+        text1: "Passwords do not match!",
+        position: "bottom",
+        visibilityTime: 3000,
+        text1Style: { fontSize: 15, fontWeight: "bold" }, // Large toast
+        text2Style: { fontSize: 12 },
+      });
       return;
     }
 
@@ -119,7 +147,16 @@ const Register = () => {
       });
 
       if (res.ok) {
-        ToastAndroid.show('Registration Successful!', ToastAndroid.SHORT);
+        // ToastAndroid.show('Registration Successful!', ToastAndroid.SHORT);
+        Toast.show({
+          type: "success",
+          text1: "Register Success ✅",
+          position: "bottom",
+          visibilityTime: 3000,
+          text1Style: { fontSize: 15, fontWeight: "bold" }, // Large toast
+          text2Style: { fontSize: 12 },
+        });
+
         setFormData({
           full_name: '',
           email: '',
@@ -134,11 +171,29 @@ const Register = () => {
         setCities([]);
         navigation.navigate('Login');
       } else {
-        ToastAndroid.show('Registration Failed!', ToastAndroid.SHORT);
+        // ToastAndroid.show('Registration Failed!', ToastAndroid.SHORT);
+        Toast.show({
+          type: "error",
+          text1: "Registration Failed!",
+          position: "bottom",
+          visibilityTime: 3000,
+          text1Style: { fontSize: 15, fontWeight: "bold" }, // Large toast
+          text2Style: { fontSize: 12 },
+        });
+
         console.log('Error:', await res.text());
       }
     } catch (error) {
-      ToastAndroid.show('Something went wrong!', ToastAndroid.SHORT);
+      // ToastAndroid.show('Something went wrong!', ToastAndroid.SHORT);
+      Toast.show({
+        type: "error",
+        text1: "Something went wrong!",
+        position: "bottom",
+        visibilityTime: 3000,
+        text1Style: { fontSize: 15, fontWeight: "bold" }, // Large toast
+        text2Style: { fontSize: 12 },
+      });
+
       console.error(error);
     }
   };
@@ -356,6 +411,7 @@ const Register = () => {
                 </View>
               </ImageBackground>
             </View>
+            <Toast position="bottom" bottomOffset={90} />
           </View>
 
         </TouchableWithoutFeedback>

@@ -145,8 +145,8 @@ import {
 } from "react-native";
 import axios from "axios";
 import BASE_URL from "../Config/api";
-import GoHomeButton from "../Components/GoHomeButton";
 import SearchwithCart from "../Components/SearchwithCart"; // ✅ IMPORT
+import Ionicons from "react-native-vector-icons/Ionicons"; // add at top
 
 export default function ModelsPage({ route, navigation }) {
   const { categoryId, categoryName } = route.params;
@@ -186,10 +186,12 @@ export default function ModelsPage({ route, navigation }) {
   };
 
   const renderModel = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => alert(`Clicked ${item.model_name}`)}
-    >
+  <TouchableOpacity
+  style={styles.card}
+  onPress={() =>
+    navigation.navigate("ProductDetailPage", { product: item })
+  }
+>
       <Image source={{ uri: item.model_image }} style={styles.image} resizeMode="contain" />
       <Text style={styles.name} numberOfLines={2}>{item.model_name}</Text>
       <Text style={styles.price}>₹{item.price}</Text>
@@ -203,7 +205,9 @@ export default function ModelsPage({ route, navigation }) {
     <View style={styles.container}>
       {/* Header Row */}
       <View style={styles.headerRow}>
-        <GoHomeButton />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
         <Text style={styles.headerText}>{categoryName} - Models</Text>
         <View style={{ width: 45 }} />
       </View>
@@ -212,13 +216,22 @@ export default function ModelsPage({ route, navigation }) {
       <SearchwithCart
         searchValue={query}
         onSearchChange={setQuery}
-        onCartPress={() => alert('Cart pressed!')}
+        onCartPress={() => navigation.navigate("CartScreen")}
       />
 
       {/* Models List */}
       {loading ? (
         <ActivityIndicator size="large" color="green" style={{ marginTop: 30 }} />
-      ) : (
+      ) :
+       filteredModels.length === 0 ? (
+        <View style={styles.noDataContainer}>
+          <Image
+            source={require("../assets/No-Product.png")} // ✅ put your image in assets
+            style={styles.noDataImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.noDataText}>No Products Available</Text>
+        </View> ):(
         <FlatList
           data={filteredModels} // ✅ filtered list
           renderItem={renderModel}
@@ -289,4 +302,38 @@ const styles = StyleSheet.create({
     color: "red",
     fontWeight: "600",
   },
+
+  backBtn: {
+    padding: 6,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    paddingVertical: 5,
+  },
+  headerText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
+    flex: 1,
+  },
+noDataContainer: {
+  flex: 1,
+  justifyContent: "center",
+  alignItems: "center",
+  marginTop: 50,
+},
+noDataImage: {
+  width: 180,
+  height: 180,
+  marginBottom: 15,
+},
+noDataText: {
+  fontSize: 16,
+  fontWeight: "600",
+  color: "#666",
+},
+
 });
