@@ -133,6 +133,8 @@ import ModelsPage from '../Screens/ModelPage';
 import ProductDetailPage from '../Screens/ProductDetailPage';
 import CartScreen from '../Screens/CartScreen';
 import Vedik from '../Screens/Vedik';
+import AddressScreen from '../Screens/AddressScreen';
+import WishlistScreen from '../Screens/WishlistScreen';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -148,7 +150,7 @@ function HomeStackScreen() {
       <HomeStack.Screen name="CategoryBrands" component={CategoryBrands} />
       <HomeStack.Screen name="ModelsPage" component={ModelsPage} />
       <HomeStack.Screen name="ProductDetailPage" component={ProductDetailPage} />
-      <HomeStack.Screen name="CartScreen" component={CartScreen} /> 
+      <HomeStack.Screen name="CartScreen" component={CartScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -159,10 +161,24 @@ function ProductsStackScreen() {
     <ProductsStack.Navigator screenOptions={{ headerShown: false }}>
       <ProductsStack.Screen name="ProductsPage" component={Products} />
       <ProductsStack.Screen name="ProductDetailPage" component={ProductDetailPage} />
-      <ProductsStack.Screen name="CartScreen" component={CartScreen} /> 
+      <ProductsStack.Screen name="CartScreen" component={CartScreen} />
     </ProductsStack.Navigator>
   );
 }
+
+const ProfileStack = createNativeStackNavigator();
+
+function ProfileStackScreen() {
+  return (
+    <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
+      <ProfileStack.Screen name="ProfileMain" component={Profile} />
+      <ProfileStack.Screen name="DeliveryAddress" component={AddressScreen} />
+      <ProfileStack.Screen name="Wishlist" component={WishlistScreen} />
+
+    </ProfileStack.Navigator>
+  );
+}
+
 
 export default function MainAppTabs() {
   const insets = useSafeAreaInsets();
@@ -199,7 +215,7 @@ export default function MainAppTabs() {
 
         <Tab.Screen
           name="Products"
-          component={ProductsStackScreen}  
+          component={ProductsStackScreen}
           options={{
             tabBarIcon: ({ color, size }) => (
               <FontAwesome name="shopping-bag" color={color} size={size} />
@@ -217,20 +233,20 @@ export default function MainAppTabs() {
           }}
         />
 
-<Tab.Screen
-  name="Vedik"
-  component={Vedik}
-  options={{
-    tabBarIcon: ({ color, size }) => (
-      <Ionicons name="leaf" color={color} size={size} />
-    ),
-  }}
-/>
+        <Tab.Screen
+          name="Vedik"
+          component={Vedik}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="leaf" color={color} size={size} />
+            ),
+          }}
+        />
 
 
         <Tab.Screen
           name="Profile"
-          component={Profile}
+          component={ProfileStackScreen}
           options={{
             tabBarIcon: ({ color, size }) => (
               <FontAwesome name="user" color={color} size={size} />

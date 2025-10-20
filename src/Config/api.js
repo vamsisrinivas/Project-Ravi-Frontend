@@ -1,8 +1,8 @@
 // src/config/api.js
 
-// const BASE_URL = 'http://192.168.0.7:3000';
+const BASE_URL = 'http://192.168.0.7:3000';
 
-const BASE_URL ='https://independent-smile-production-2713.up.railway.app'
+// const BASE_URL ='project-ravi-backend-production.up.railway.app'
 
 export default BASE_URL;
 

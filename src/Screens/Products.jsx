@@ -20,6 +20,7 @@ import BASE_URL from "../Config/api";
 import { AuthContext } from "../Context/AuthContext"; // ✅ import context
 import useAddToCart from "../Components/AddToCartFun"; // ✅ import hook
 import Toast from "react-native-toast-message";
+import axios from "axios";
 
 export default function Products({ navigation }) {
 
@@ -127,6 +128,57 @@ export default function Products({ navigation }) {
   }, [query, sortOrder, selectedType, selectedCategory, selectedBrand, models]);
 
 
+  // ❤️ Add to wishlist
+  const handleAddToWishlist = async (modelId) => {
+    try {
+      if (!customer_id) {
+        Toast.show({ type: "error", text1: "Please login first" });
+        return;
+      }
+
+      const res = await axios.post(`${BASE_URL}/api/wishlist/add`, {
+        customer_id,
+        model_id: modelId,
+      });
+
+      if (res.status === 200 || res.status === 201) {
+        setFavorites((prev) => ({ ...prev, [modelId]: true }));
+        Toast.show({ type: "success", text1: "Added to wishlist ❤️" });
+      }
+    } catch (error) {
+      console.error(error);
+      Toast.show({
+        type: "error",
+        text1: error.response?.data?.message || "Already in wishlist!",
+      });
+    }
+  };
+
+  // 💔 Remove from wishlist
+  const handleRemoveFromWishlist = async (modelId) => {
+    try {
+      const res = await axios.delete(
+        `${BASE_URL}/api/wishlist/${customer_id}/${modelId}`
+      );
+
+      if (res.status === 200) {
+        setFavorites((prev) => {
+          const updated = { ...prev };
+          delete updated[modelId];
+          return updated;
+        });
+        Toast.show({ type: "info", text1: "Removed from wishlist 💔" });
+      }
+    } catch (error) {
+      console.error(error);
+      Toast.show({
+        type: "error",
+        text1: "Failed to remove from wishlist",
+      });
+    }
+  };
+
+
   const renderCard = ({ item }) => (
     <TouchableOpacity
       style={[styles.card, gridView ? styles.cardGrid : styles.cardList]}
@@ -145,11 +197,20 @@ export default function Products({ navigation }) {
         {/* Keep favorite button separate so only it intercepts its own taps */}
         <TouchableOpacity
           style={styles.favoriteBtn}
-          onPress={() => alert("Favorite clicked!")}
+          onPress={() =>
+            favorites[item.id]
+              ? handleRemoveFromWishlist(item.id)
+              : handleAddToWishlist(item.id)
+          }
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Icon name="favorite-border" size={22} color="#ff4081" />
+          <Icon
+            name={favorites[item.id] ? "favorite" : "favorite-border"}
+            size={22}
+            color={favorites[item.id] ? "#ff4081" : "#999"}
+          />
         </TouchableOpacity>
+
       </View>
 
       <View style={{ flex: 1, paddingLeft: gridView ? 0 : 12 }}>
@@ -329,7 +390,7 @@ export default function Products({ navigation }) {
         />
       )}
 
-                       <Toast position="bottom" bottomOffset={90} />
+      <Toast position="bottom" bottomOffset={90} />
 
     </View>
   );
@@ -358,12 +419,13 @@ const styles = StyleSheet.create({
   cardList: { flexDirection: "row", alignItems: "center" },
 
   imageWrapper: { position: "relative" },
-  image: { width: "100%", height: 140, borderRadius: 12 },
-  imageList: { width: 100, height: 100, borderRadius: 12 },
+
+  image: { width: "100%", height: 140, borderRadius: 10 },
+  imageList: { width: 85, height: 85, borderRadius: 10 },
   favoriteBtn: {
     position: "absolute",
-    top: 8,
-    right: 8,
+    top: 6,
+    right: 6,
     backgroundColor: "rgba(255,255,255,0.8)",
     borderRadius: 20,
     padding: 4,
