@@ -135,6 +135,8 @@ import CartScreen from '../Screens/CartScreen';
 import Vedik from '../Screens/Vedik';
 import AddressScreen from '../Screens/AddressScreen';
 import WishlistScreen from '../Screens/WishlistScreen';
+import CheckoutScreen from '../Screens/CheckoutScreen';
+import PaymentSuccessScreen from "../Screens/PaymentSuccessScreen";
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -151,6 +153,9 @@ function HomeStackScreen() {
       <HomeStack.Screen name="ModelsPage" component={ModelsPage} />
       <HomeStack.Screen name="ProductDetailPage" component={ProductDetailPage} />
       <HomeStack.Screen name="CartScreen" component={CartScreen} />
+      <HomeStack.Screen name="Checkout" component={CheckoutScreen} />
+      <HomeStack.Screen name="PaymentSuccess" component={PaymentSuccessScreen}  options={{ headerShown: false }}
+      />
     </HomeStack.Navigator>
   );
 }
@@ -162,6 +167,7 @@ function ProductsStackScreen() {
       <ProductsStack.Screen name="ProductsPage" component={Products} />
       <ProductsStack.Screen name="ProductDetailPage" component={ProductDetailPage} />
       <ProductsStack.Screen name="CartScreen" component={CartScreen} />
+      <ProductsStack.Screen name="Checkout" component={CheckoutScreen} />
     </ProductsStack.Navigator>
   );
 }

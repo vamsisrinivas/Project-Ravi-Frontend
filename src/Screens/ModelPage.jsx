@@ -186,12 +186,12 @@ export default function ModelsPage({ route, navigation }) {
   };
 
   const renderModel = ({ item }) => (
-  <TouchableOpacity
-  style={styles.card}
-  onPress={() =>
-    navigation.navigate("ProductDetailPage", { product: item })
-  }
->
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() =>
+        navigation.navigate("ProductDetailPage", { product: item })
+      }
+    >
       <Image source={{ uri: item.model_image }} style={styles.image} resizeMode="contain" />
       <Text style={styles.name} numberOfLines={2}>{item.model_name}</Text>
       <Text style={styles.price}>₹{item.price}</Text>
@@ -223,24 +223,24 @@ export default function ModelsPage({ route, navigation }) {
       {loading ? (
         <ActivityIndicator size="large" color="green" style={{ marginTop: 30 }} />
       ) :
-       filteredModels.length === 0 ? (
-        <View style={styles.noDataContainer}>
-          <Image
-            source={require("../assets/No-Product.png")} // ✅ put your image in assets
-            style={styles.noDataImage}
-            resizeMode="contain"
+        filteredModels.length === 0 ? (
+          <View style={styles.noDataContainer}>
+            <Image
+              source={require("../assets/No-Product.png")} // ✅ put your image in assets
+              style={styles.noDataImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.noDataText}>No Products Available</Text>
+          </View>) : (
+          <FlatList
+            data={filteredModels} // ✅ filtered list
+            renderItem={renderModel}
+            keyExtractor={(item) => item.id.toString()}
+            numColumns={2}
+            columnWrapperStyle={{ justifyContent: "space-between" }}
+            contentContainerStyle={styles.listContent}
           />
-          <Text style={styles.noDataText}>No Products Available</Text>
-        </View> ):(
-        <FlatList
-          data={filteredModels} // ✅ filtered list
-          renderItem={renderModel}
-          keyExtractor={(item) => item.id.toString()}
-          numColumns={2}
-          columnWrapperStyle={{ justifyContent: "space-between" }}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
+        )}
     </View>
   );
 }
@@ -319,21 +319,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
     flex: 1,
   },
-noDataContainer: {
-  flex: 1,
-  justifyContent: "center",
-  alignItems: "center",
-  marginTop: 50,
-},
-noDataImage: {
-  width: 180,
-  height: 180,
-  marginBottom: 15,
-},
-noDataText: {
-  fontSize: 16,
-  fontWeight: "600",
-  color: "#666",
-},
+  noDataContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 50,
+  },
+  noDataImage: {
+    width: 180,
+    height: 180,
+    marginBottom: 15,
+  },
+  noDataText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666",
+  },
 
 });

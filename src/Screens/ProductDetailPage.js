@@ -280,6 +280,22 @@ export default function ProductDetailPage({ route, navigation }) {
     // });
   };
 
+   const handleBuyNow = async (product) => {
+  try {
+    // Step 1: Add to cart (reuse your hook)
+    await addToCart(product, 1);
+
+    // Step 2: Navigate to Checkout
+   navigation.navigate("Home", { screen: "CartScreen" });
+  } catch (error) {
+    console.error("Buy Now error:", error);
+    Toast.show({
+      type: "error",
+      text1: "Failed to process Buy Now",
+      text2: "Please try again later",
+    });
+  }
+};
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -368,13 +384,7 @@ export default function ProductDetailPage({ route, navigation }) {
 
           <TouchableOpacity
             style={styles.buyBtn}
-            onPress={() =>
-              Toast.show({
-                type: "info",
-                // text1: `Buying ${quantity} × ${product.model_name}`,
-                text2: "Redirecting to checkout...",
-              })
-            }
+         onPress={() => handleBuyNow(product)}
           >
             <Ionicons name="flash" size={20} color="#fff" />
             <Text style={styles.buyBtnText}>Buy Now</Text>

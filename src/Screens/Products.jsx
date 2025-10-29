@@ -1,7 +1,7 @@
 
 
-
-import React, { useContext, useEffect, useState } from "react";
+// src/Screens/Products.jsx
+import React, { useContext, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,24 +12,26 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
+// import FastImage from 'react-native-fast-image'
+
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { Picker } from "@react-native-picker/picker";
-import SearchwithCart from "../Components/SearchwithCart";
+import { useFocusEffect } from "@react-navigation/native";
+
 import BASE_URL from "../Config/api";
-import { AuthContext } from "../Context/AuthContext"; // ✅ import context
-import useAddToCart from "../Components/AddToCartFun"; // ✅ import hook
+import { AuthContext } from "../Context/AuthContext";
+import useAddToCart from "../Components/AddToCartFun";
 import Toast from "react-native-toast-message";
-import axios from "axios";
+import { WishlistContext } from "../Context/WishlistContext";
+import SearchwithCart from "../Components/SearchwithCart";
 
 export default function Products({ navigation }) {
+  const { user } = useContext(AuthContext);
+  const customer_id = user?.customer_id;
 
-  const { user } = useContext(AuthContext); // ✅ get logged in user
-  const customer_id = user?.customer_id;    // ✅ extract customer_id
-
-
-  // ✅ hook for add-to-cart
   const { addToCart, loading: cartLoading } = useAddToCart(customer_id);
+  const { wishlist, addToWishlist, removeFromWishlist } = useContext(WishlistContext);
 
   const [models, setModels] = useState([]);
   const [filteredModels, setFilteredModels] = useState([]);
@@ -46,32 +48,46 @@ export default function Products({ navigation }) {
   const [selectedType, setSelectedType] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
-  const [favorites, setFavorites] = useState({});
 
+  // 🔁 Fetch models every time screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
+      const fetchModels = async () => {
+        setLoading(true);
+        try {
+          const res = await fetch(`${BASE_URL}/api/models`);
+          const data = await res.json();
+          if (isActive) {
+            setModels(data);
+            setFilteredModels(data);
+            const types = [...new Set(data.map((m) => m.category?.category_type))];
+            setCategoryTypes(types);
 
-  // Fetch Models
-  useEffect(() => {
-    fetch(`${BASE_URL}/api/models`)
-      .then((res) => res.json())
-      .then((data) => {
-        setModels(data);
-        setFilteredModels(data);
+            // Reset filters on focus (optional)
+            setQuery("");
+            setSortOrder("");
+            setSelectedType("");
+            setSelectedCategory("");
+            setSelectedBrand("");
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          if (isActive) setLoading(false);
+        }
+      };
 
-        const types = [...new Set(data.map((m) => m.category?.category_type))];
-        setCategoryTypes(types);
-
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
-  }, []);
-
+      fetchModels();
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
 
   // Filters
-  useEffect(() => {
+  React.useEffect(() => {
     let result = [...models];
 
     if (query) {
@@ -82,7 +98,6 @@ export default function Products({ navigation }) {
 
     if (selectedType) {
       result = result.filter((m) => m.category?.category_type === selectedType);
-
       const cats = [
         ...new Map(
           result.map((m) => [
@@ -98,15 +113,11 @@ export default function Products({ navigation }) {
 
     if (selectedCategory) {
       result = result.filter((m) => m.category?.id === selectedCategory);
-
       const brs = [
         ...new Map(
           models
             .filter((m) => m.category?.id === selectedCategory)
-            .map((m) => [
-              m.brand?.id,
-              { id: m.brand?.id, name: m.brand?.brand_name },
-            ])
+            .map((m) => [m.brand?.id, { id: m.brand?.id, name: m.brand?.brand_name }])
         ).values(),
       ];
       setBrands(brs);
@@ -127,53 +138,19 @@ export default function Products({ navigation }) {
     setFilteredModels(result);
   }, [query, sortOrder, selectedType, selectedCategory, selectedBrand, models]);
 
-
-  // ❤️ Add to wishlist
-  const handleAddToWishlist = async (modelId) => {
+  const handleBuyNow = async (product) => {
     try {
-      if (!customer_id) {
-        Toast.show({ type: "error", text1: "Please login first" });
-        return;
-      }
+      // Step 1: Add to cart (reuse your hook)
+      await addToCart(product, 1);
 
-      const res = await axios.post(`${BASE_URL}/api/wishlist/add`, {
-        customer_id,
-        model_id: modelId,
-      });
-
-      if (res.status === 200 || res.status === 201) {
-        setFavorites((prev) => ({ ...prev, [modelId]: true }));
-        Toast.show({ type: "success", text1: "Added to wishlist ❤️" });
-      }
+      // Step 2: Navigate to Checkout
+      navigation.navigate("Home", { screen: "CartScreen" });
     } catch (error) {
-      console.error(error);
+      console.error("Buy Now error:", error);
       Toast.show({
         type: "error",
-        text1: error.response?.data?.message || "Already in wishlist!",
-      });
-    }
-  };
-
-  // 💔 Remove from wishlist
-  const handleRemoveFromWishlist = async (modelId) => {
-    try {
-      const res = await axios.delete(
-        `${BASE_URL}/api/wishlist/${customer_id}/${modelId}`
-      );
-
-      if (res.status === 200) {
-        setFavorites((prev) => {
-          const updated = { ...prev };
-          delete updated[modelId];
-          return updated;
-        });
-        Toast.show({ type: "info", text1: "Removed from wishlist 💔" });
-      }
-    } catch (error) {
-      console.error(error);
-      Toast.show({
-        type: "error",
-        text1: "Failed to remove from wishlist",
+        text1: "Failed to process Buy Now",
+        text2: "Please try again later",
       });
     }
   };
@@ -183,9 +160,7 @@ export default function Products({ navigation }) {
     <TouchableOpacity
       style={[styles.card, gridView ? styles.cardGrid : styles.cardList]}
       activeOpacity={0.9}
-      onPress={() =>
-        navigation.navigate("ProductDetailPage", { product: item })
-      }
+      onPress={() => navigation.navigate("ProductDetailPage", { product: item })}
     >
       <View style={styles.imageWrapper}>
         <Image
@@ -194,23 +169,19 @@ export default function Products({ navigation }) {
           resizeMode="cover"
         />
 
-        {/* Keep favorite button separate so only it intercepts its own taps */}
         <TouchableOpacity
           style={styles.favoriteBtn}
           onPress={() =>
-            favorites[item.id]
-              ? handleRemoveFromWishlist(item.id)
-              : handleAddToWishlist(item.id)
+            wishlist[item.id] ? removeFromWishlist(item.id) : addToWishlist(item.id)
           }
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Icon
-            name={favorites[item.id] ? "favorite" : "favorite-border"}
+            name={wishlist[item.id] ? "favorite" : "favorite-border"}
             size={22}
-            color={favorites[item.id] ? "#ff4081" : "#999"}
+            color={wishlist[item.id] ? "#ff4081" : "#999"}
           />
         </TouchableOpacity>
-
       </View>
 
       <View style={{ flex: 1, paddingLeft: gridView ? 0 : 12 }}>
@@ -226,15 +197,13 @@ export default function Products({ navigation }) {
         <View style={styles.btnRow}>
           <TouchableOpacity
             style={styles.cartBtn}
-            onPress={() => addToCart(item, 1)} // ✅ reuse hook
+            onPress={() => addToCart(item, 1)}
             disabled={cartLoading}
           >
             <Icon name="shopping-cart" size={18} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.buyBtn}
-          // onPress={handleAddToCart}
-          >
+          <TouchableOpacity style={styles.buyBtn} onPress={() => handleBuyNow(item)}>
+
             <Text style={styles.buyText}>Buy Now</Text>
           </TouchableOpacity>
         </View>
@@ -242,32 +211,25 @@ export default function Products({ navigation }) {
     </TouchableOpacity>
   );
 
-
   return (
     <View style={styles.container}>
-
       {/* Header */}
       <View style={styles.headerRow}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerText}>All Products</Text>
         <View style={{ width: 45 }} />
       </View>
+
       <SearchwithCart
         searchValue={query}
         onSearchChange={setQuery}
         onCartPress={() => navigation.navigate("CartScreen")}
       />
 
-
       {/* Filter Bar */}
-      {/* 🔼 Clear + Sort Row */}
       <View style={styles.actionRow}>
-        {/* Clear All */}
         <TouchableOpacity
           style={[styles.actionChip, styles.clearChip]}
           onPress={() => {
@@ -281,7 +243,6 @@ export default function Products({ navigation }) {
           <Text style={styles.clearText}>Clear Filters</Text>
         </TouchableOpacity>
 
-        {/* Sort */}
         <TouchableOpacity
           style={[styles.actionChip, sortOrder && styles.sortChipActive]}
           onPress={() => {
@@ -291,12 +252,7 @@ export default function Products({ navigation }) {
           }}
         >
           <Ionicons name="swap-vertical" size={16} color={sortOrder ? "#fff" : "#333"} />
-          <Text
-            style={[
-              styles.sortText,
-              sortOrder && { color: "#fff", fontWeight: "600" },
-            ]}
-          >
+          <Text style={[styles.sortText, sortOrder && { color: "#fff", fontWeight: "600" }]}>
             {sortOrder === "low"
               ? "Price: Low→High"
               : sortOrder === "high"
@@ -306,39 +262,29 @@ export default function Products({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* 🔽 Filter Bar with Chips + Dropdowns */}
+      {/* Filters + Dropdowns */}
       <View style={styles.filterBar}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ flexGrow: 1, alignItems: "center" }}
         >
-          {/* Type Chips */}
           {categoryTypes.map((t, idx) => (
             <TouchableOpacity
               key={idx}
-              style={[
-                styles.filterChip,
-                selectedType === t && styles.filterChipActive,
-              ]}
+              style={[styles.filterChip, selectedType === t && styles.filterChipActive]}
               onPress={() => {
                 setSelectedType(selectedType === t ? "" : t);
                 setSelectedCategory("");
                 setSelectedBrand("");
               }}
             >
-              <Text
-                style={[
-                  styles.filterText,
-                  selectedType === t && styles.filterTextActive,
-                ]}
-              >
+              <Text style={[styles.filterText, selectedType === t && styles.filterTextActive]}>
                 {t}
               </Text>
             </TouchableOpacity>
           ))}
 
-          {/* Category Dropdown */}
           <View style={styles.dropdownSmall}>
             <Picker
               selectedValue={selectedCategory}
@@ -356,7 +302,6 @@ export default function Products({ navigation }) {
             </Picker>
           </View>
 
-          {/* Brand Dropdown */}
           <View style={styles.dropdownSmall}>
             <Picker
               selectedValue={selectedBrand}
@@ -371,12 +316,19 @@ export default function Products({ navigation }) {
             </Picker>
           </View>
         </ScrollView>
-
       </View>
-
 
       {loading ? (
         <ActivityIndicator size="large" color="green" style={{ marginTop: 10 }} />
+        // <View>
+        //   <FastImage
+        //     source={require("../assets/loading.gif")}
+        //     style={styles.gif}
+        //     resizeMode={FastImage.resizeMode.contain}
+        //   />
+        // </View>
+      ) : filteredModels.length === 0 ? (
+        <Text style={{ textAlign: "center", marginTop: 20 }}>No products found</Text>
       ) : (
         <FlatList
           key={gridView ? "grid" : "list"}
@@ -391,218 +343,46 @@ export default function Products({ navigation }) {
       )}
 
       <Toast position="bottom" bottomOffset={90} />
-
     </View>
   );
 }
 
+// Styles (keep your current styles as-is)
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fafafa",
-    paddingHorizontal: 6,
-    paddingTop: 8,
-  },
-
+  container: { flex: 1, backgroundColor: "#fafafa", paddingHorizontal: 6, paddingTop: 8 },
   row: { justifyContent: "space-between" },
-
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 10,
-    marginBottom: 10,
-    flex: 1,
-    marginHorizontal: 1,
-    elevation: 3,
-  },
+  card: { backgroundColor: "#fff", borderRadius: 14, padding: 10, marginBottom: 10, flex: 1, marginHorizontal: 1, elevation: 3 },
   cardGrid: { maxWidth: "50%" },
   cardList: { flexDirection: "row", alignItems: "center" },
-
   imageWrapper: { position: "relative" },
-
-  image: { width: "100%", height: 140, borderRadius: 10 },
+  image: { width: "100%", height: 140, resizeMode: "contain", borderRadius: 12 },
   imageList: { width: 85, height: 85, borderRadius: 10 },
-  favoriteBtn: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    backgroundColor: "rgba(255,255,255,0.8)",
-    borderRadius: 20,
-    padding: 4,
-  },
-
+  favoriteBtn: { position: "absolute", top: 6, right: 6, backgroundColor: "rgba(255,255,255,0.8)", borderRadius: 20, padding: 4 },
   name: { fontSize: 15, fontWeight: "600", color: "#222", marginTop: 6 },
   segment: { fontSize: 12, color: "#4caf50", marginVertical: 2 },
   detail: { fontSize: 12, color: "#777", marginVertical: 2 },
   price: { fontSize: 16, fontWeight: "bold", color: "#e91e63", marginTop: 4 },
-
   btnRow: { flexDirection: "row", marginTop: 8 },
-  cartBtn: {
-    flex: 0.3,
-    backgroundColor: "#4caf50",
-    padding: 8,
-    borderRadius: 10,
-    alignItems: "center",
-    marginRight: 6,
-  },
-  buyBtn: {
-    flex: 0.7,
-    backgroundColor: "#ff5722",
-    padding: 8,
-    borderRadius: 10,
-    alignItems: "center",
-  },
+  cartBtn: { flex: 0.3, backgroundColor: "#4caf50", padding: 8, borderRadius: 10, alignItems: "center", marginRight: 6 },
+  buyBtn: { flex: 0.7, backgroundColor: "#ff5722", padding: 8, borderRadius: 10, alignItems: "center" },
   buyText: { color: "#fff", fontWeight: "600", fontSize: 14 },
-
-  filterBarCompact: {
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    margin: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 6,
-    borderRadius: 12,
-    elevation: 2,
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  filterChip: {
-    backgroundColor: "#f5f5f5",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  filterChipActive: {
-    backgroundColor: "#4caf50",
-  },
+  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 10, justifyContent: "space-between", paddingVertical: 6 },
+  headerText: { fontSize: 22, fontWeight: "700", color: "#222", letterSpacing: 0.5 },
+  filterBar: { flexDirection: "row", backgroundColor: "#fff", marginHorizontal: 10, paddingVertical: 6, paddingHorizontal: 6, borderRadius: 12, elevation: 2 },
+  filterChip: { backgroundColor: "#f5f5f5", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, marginRight: 8 },
+  filterChipActive: { backgroundColor: "#4caf50" },
   filterText: { fontSize: 13, color: "#333" },
   filterTextActive: { color: "#fff", fontWeight: "600" },
-  iconChip: {
-    backgroundColor: "#eee",
-    padding: 8,
-    borderRadius: 20,
-    marginRight: 6,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  clearAllChip: {
-    backgroundColor: "#ffcccc",
-    borderColor: "#ff4d4d",
-    textAlign: "center"
-  },
-
-  clearAllText: {
-    color: "#b30000",
-    fontWeight: "600",
-  },
-
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-    justifyContent: "space-between",
-    paddingVertical: 6,
-  },
-  headerText: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#222",
-    letterSpacing: 0.5,
-  },
-  dropdownWrapper: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 20,
-    marginHorizontal: 6,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    overflow: "hidden", // keeps text inside rounded border
-  },
-
-  dropdown: {
-    height: 55,
-    minWidth: 150,
-    paddingHorizontal: 10, // spacing so text is visible
-    color: "#222",         // makes text visible
-    fontSize: 14,          // readable size
-  },
-
-
-  actionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginHorizontal: 10,
-    marginBottom: 6,
-  },
-
-  actionChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    elevation: 1,
-  },
-
-  clearChip: {
-    backgroundColor: "#ffe6e6",
-  },
-  clearText: {
-    marginLeft: 6,
-    color: "#b30000",
-    fontWeight: "600",
-  },
-
-  sortChipActive: {
-    backgroundColor: "#4caf50",
-  },
-  sortText: {
-    marginLeft: 6,
-    fontSize: 13,
-    color: "#333",
-  },
-
-  filterBar: {
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    marginHorizontal: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 6,
-    borderRadius: 12,
-    elevation: 2,
-  },
-
-  filterChip: {
-    backgroundColor: "#f5f5f5",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  filterChipActive: {
-    backgroundColor: "#4caf50",
-  },
-  filterText: { fontSize: 13, color: "#333" },
-  filterTextActive: { color: "#fff", fontWeight: "600" },
-
-  dropdownSmall: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 16,
-    marginHorizontal: 6,
-    backgroundColor: "#fff",
-    overflow: "hidden",
-    width: 130, // 👈 smaller width
-    height: 35,
-    justifyContent: "center",
-  },
-  dropdown: {
-    height: 55,
+  actionRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginHorizontal: 10, marginBottom: 6 },
+  actionChip: { flexDirection: "row", alignItems: "center", backgroundColor: "#f5f5f5", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, elevation: 1 },
+  clearChip: { backgroundColor: "#ffe6e6" },
+  clearText: { marginLeft: 6, color: "#b30000", fontWeight: "600" },
+  sortChipActive: { backgroundColor: "#4caf50" },
+  sortText: { marginLeft: 6, fontSize: 13, color: "#333" },
+  dropdownSmall: { borderWidth: 1, borderColor: "#ccc", borderRadius: 16, marginHorizontal: 6, backgroundColor: "#fff", overflow: "hidden", width: 130, height: 35, justifyContent: "center" },
+  dropdown: { height: 55, width: "100%", fontSize: 13, color: "#222" },
+  gif: {
     width: "100%",
-    fontSize: 13,
-    color: "#222",
+    height: "80%",
   },
-
 });

@@ -213,6 +213,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+// import FastImage from 'react-native-fast-image'
+
 import axios from 'axios';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import BASE_URL from '../Config/api';
@@ -302,7 +304,14 @@ export default function CategoriesPage() {
 
       {/* List */}
       {loading ? (
-        <ActivityIndicator size="large" color="green" style={{ marginTop: 50 }} />
+        // <ActivityIndicator size="large" color="green" style={{ marginTop: 50 }} />
+          <View>
+    <FastImage
+      source={require("../assets/loading.gif")}
+      style={styles.gif}
+      resizeMode={FastImage.resizeMode.contain}
+    />
+  </View>
       ) : filteredCategories.length === 0 ? (
         <View style={styles.noDataContainer}>
           <Image
@@ -337,4 +346,8 @@ const styles = StyleSheet.create({
   noDataContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 },
   noDataImage: { width: 180, height: 180, marginBottom: 15 },
   noDataText: { fontSize: 16, fontWeight: '600', color: '#666' },
+   gif: {
+    width: "100%",
+    height: "80%",
+  },
 });

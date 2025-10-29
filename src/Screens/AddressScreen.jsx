@@ -534,12 +534,14 @@ export default function AddressScreen() {
         <View style={styles.rowWrap}>
           <TextInput
             placeholder="FULL NAME"
+            placeholderTextColor="#000" // ✅ Black placeholder
             style={[styles.input, styles.halfInput]}
             value={form.full_name}
             onChangeText={(v) => setForm({ ...form, full_name: v })}
           />
           <TextInput
             placeholder="PHONE"
+            placeholderTextColor="#000" // ✅ Black placeholder
             keyboardType="number-pad"
             style={[styles.input, styles.halfInput]}
             value={form.phone}
@@ -549,12 +551,14 @@ export default function AddressScreen() {
 
         <TextInput
           placeholder="ADDRESS LINE 1"
+          placeholderTextColor="#000" // ✅ Black placeholder
           style={styles.input}
           value={form.address_line1}
           onChangeText={(v) => setForm({ ...form, address_line1: v })}
         />
         <TextInput
           placeholder="ADDRESS LINE 2"
+          placeholderTextColor="#000" // ✅ Black placeholder
           style={styles.input}
           value={form.address_line2}
           onChangeText={(v) => setForm({ ...form, address_line2: v })}
@@ -563,12 +567,14 @@ export default function AddressScreen() {
         <View style={styles.rowWrap}>
           <TextInput
             placeholder="VILLAGE"
+            placeholderTextColor="#000" // ✅ Black placeholder
             style={[styles.input, styles.halfInput]}
             value={form.village}
             onChangeText={(v) => setForm({ ...form, village: v })}
           />
           <TextInput
             placeholder="DISTRICT"
+            placeholderTextColor="#000" // ✅ Black placeholder
             style={[styles.input, styles.halfInput]}
             value={form.district}
             onChangeText={(v) => setForm({ ...form, district: v })}
@@ -578,12 +584,14 @@ export default function AddressScreen() {
         <View style={styles.rowWrap}>
           <TextInput
             placeholder="STATE"
+            placeholderTextColor="#000" // ✅ Black placeholder
             style={[styles.input, styles.halfInput]}
             value={form.state}
             onChangeText={(v) => setForm({ ...form, state: v })}
           />
           <TextInput
             placeholder="PINCODE"
+            placeholderTextColor="#000" // ✅ Black placeholder
             keyboardType="number-pad"
             style={[styles.input, styles.halfInput]}
             value={form.pincode}
@@ -593,6 +601,7 @@ export default function AddressScreen() {
 
         <TextInput
           placeholder="LANDMARK"
+          placeholderTextColor="#000" // ✅ Black placeholder
           style={styles.input}
           value={form.landmark}
           onChangeText={(v) => setForm({ ...form, landmark: v })}
@@ -600,18 +609,27 @@ export default function AddressScreen() {
 
         {/* Address Type Picker */}
         <View style={styles.row}>
-          <Text style={{ marginRight: 10 }}>Address Type:</Text>
-          <Picker
-            selectedValue={form.address_type}
-            style={{ flex: 1, height: 65 }}
-            onValueChange={(itemValue) =>
-              setForm({ ...form, address_type: itemValue })
-            }
-          >
-            <Picker.Item label="Shipping" value="shipping" />
-            <Picker.Item label="Billing" value="billing" />
-          </Picker>
+          <Text style={{ marginRight: 10, color: "#000" }}>Address Type:</Text>
+          <View style={{ flex: 1, backgroundColor: "#fff", borderRadius: 8, borderWidth: 1, borderColor: "#050505ff",padding:1.5 }}>
+            <Picker
+              selectedValue={form.address_type}
+              style={{
+                color: "#000", // ✅ black text
+                backgroundColor: "#fff", // ✅ white background
+                height: 55,
+              }}
+              dropdownIconColor="#000" // ✅ makes the dropdown arrow black (Android)
+              onValueChange={(itemValue) =>
+                setForm({ ...form, address_type: itemValue })
+              }
+              itemStyle={{ color: "#000" }} // ✅ for iOS
+            >
+              <Picker.Item label="Shipping" value="shipping" />
+              <Picker.Item label="Billing" value="billing" />
+            </Picker>
+          </View>
         </View>
+
 
         {/* ✅ Checkbox: Same as other address */}
         <View style={styles.checkboxRow}>
@@ -679,7 +697,7 @@ export default function AddressScreen() {
               <Text style={styles.addressText}>Landmark: {addr.landmark}</Text>
             )}
 
-            <View style={styles.actions}>
+            {/* <View style={styles.actions}>
               {addr.is_default !== 1 && (
                 <TouchableOpacity onPress={() => setDefaultAddress(addr.id)}>
                   <Text style={styles.setDefault}>Set Default</Text>
@@ -691,7 +709,21 @@ export default function AddressScreen() {
               <TouchableOpacity onPress={() => handleDelete(addr.id)}>
                 <Text style={styles.delete}>Delete</Text>
               </TouchableOpacity>
-            </View>
+            </View> */}
+            <View style={styles.actions}>
+  {addr.is_default !== 1 && (
+    <TouchableOpacity onPress={() => setDefaultAddress(addr.id)} style={styles.actionButton}>
+      <Text style={styles.setDefault}>Set Default</Text>
+    </TouchableOpacity>
+  )}
+  <TouchableOpacity onPress={() => handleEdit(addr)} style={styles.actionButton}>
+    <Text style={styles.edit}>Edit</Text>
+  </TouchableOpacity>
+  <TouchableOpacity onPress={() => handleDelete(addr.id)} style={styles.actionButton}>
+    <Text style={styles.delete}>Delete</Text>
+  </TouchableOpacity>
+</View>
+
           </View>
         ))
       )}
@@ -718,7 +750,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: "600", marginBottom: 10 },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#050505ff",
     padding: 10,
     borderRadius: 8,
     marginVertical: 5,
@@ -775,8 +807,8 @@ const styles = StyleSheet.create({
   defaultBadge: {
     backgroundColor: "#4CAF50",
     color: "#fff",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 5,
     fontSize: 12,
   },
@@ -797,8 +829,33 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: "#548c5c",
   },
-  actions: { flexDirection: "row", justifyContent: "flex-end", marginTop: 10 },
-  setDefault: { color: "#1976D2", marginRight: 15 },
-  edit: { color: "#FFA500", marginRight: 15 },
-  delete: { color: "red" },
+  // actions: { flexDirection: "row", justifyContent: "flex-end", marginTop: 10 },
+  // setDefault: { color: "#1976D2", marginRight: 15 },
+  // edit: { color: "#FFA500", marginRight: 15 ,width:40},
+  // delete: { color: "red" ,width:40},
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'right',
+    justifyContent:"flex-end", // even spacing
+    marginTop: 10,
+  },
+  actionButton: {
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  setDefault: {
+    color: '#1976D2',
+    fontWeight: '600',
+  },
+  edit: {
+    color: '#FFA500',
+    fontWeight: '600',
+  },
+  delete: {
+    color: '#dc3545',
+    fontWeight: '600',
+  },
 });

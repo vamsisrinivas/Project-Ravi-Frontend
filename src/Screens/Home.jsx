@@ -18,6 +18,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
@@ -163,6 +164,13 @@ const Home = () => {
 
                 {loading ? (
                   <ActivityIndicator size="large" color="green" />
+        //             <View>
+        //   <FastImage
+        //     source={require("../assets/loading.gif")}
+        //     style={styles.gif}
+        //     resizeMode={FastImage.resizeMode.contain}
+        //   />
+        // </View>
                 ) : (
                   <ScrollView
                     horizontal
@@ -347,7 +355,7 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   categoryLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: "black",
     textAlign: "center",
   },
@@ -386,5 +394,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#444",
     textAlign: "center",
+  },
+   gif: {
+    width: "100%",
+    height: "80%",
   },
 });
