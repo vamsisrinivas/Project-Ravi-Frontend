@@ -243,6 +243,7 @@ import fallbackImage from "../assets/Not-Avaliable.jpeg";
 import { AuthContext } from "../Context/AuthContext";
 import useAddToCart from "../Components/AddToCartFun";
 import GoHomeButton from "../Components/GoHomeButton";
+import { showToast } from "../Components/CustomToast";
 
 const { width } = Dimensions.get("window");
 
@@ -273,27 +274,28 @@ export default function ProductDetailPage({ route, navigation }) {
   // ✅ handle Add to Cart with Toast
   const handleAddToCart = async () => {
     await addToCart(product, quantity);
-    // Toast.show({
-    //   type: "success",
-    //   // text1: `${quantity} × ${product.model_name}`,
-    //   text2: "Item successfully added to cart 👌",
-    // });
+ 
+    showToast("success", "Success!", "Add to Cart successfully!");
+    
   };
 
    const handleBuyNow = async (product) => {
   try {
     // Step 1: Add to cart (reuse your hook)
     await addToCart(product, 1);
+    showToast("success", "Success!", "Add to Cart successfully!");
 
     // Step 2: Navigate to Checkout
    navigation.navigate("Home", { screen: "CartScreen" });
   } catch (error) {
     console.error("Buy Now error:", error);
-    Toast.show({
-      type: "error",
-      text1: "Failed to process Buy Now",
-      text2: "Please try again later",
-    });
+    // Toast.show({
+    //   type: "error",
+    //   text1: "Failed to Buy Now",
+    //   text2: "Please try again later",
+    // });
+
+    showToast("error", "Failed to Buy Now", "Please try again later!");
   }
 };
   return (
@@ -406,8 +408,6 @@ export default function ProductDetailPage({ route, navigation }) {
         </ScrollView> */}
       </ScrollView>
 
-      {/* ✅ Toast container */}
-      <Toast position="bottom" bottomOffset={90} />
     </View>
   );
 }

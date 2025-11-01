@@ -4,7 +4,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ActivityIndicator, View } from "react-native";
-// import SplashScreen from "react-native-splash-screen"
+import SplashScreen from "react-native-splash-screen"
 import { AuthProvider } from "./src/Context/AuthContext";
 import { CartProvider } from "./src/Context/CartContext";  // ✅ import cart context
 
@@ -12,6 +12,8 @@ import Register from "./src/Auth/Register";
 import Login from "./src/Auth/Login";
 import MainAppTabs from "./src/Components/BottomTab";
 import { WishlistProvider } from "./src/Context/WishlistContext";
+import Toast from "react-native-toast-message";
+import { toastConfig } from "./src/Components/CustomToast";
 
 
 const Stack = createNativeStackNavigator();
@@ -19,9 +21,9 @@ const Stack = createNativeStackNavigator();
 function RootNavigator() {
   const [initialRoute, setInitialRoute] = useState(null);
 
-// useEffect(()=>{
-//   SplashScreen.hide()
-// },[])
+useEffect(()=>{
+  SplashScreen.hide()
+},[])
 
   useEffect(() => {
     const checkUser = async () => {
@@ -61,6 +63,7 @@ export default function App() {
       <CartProvider>
         <WishlistProvider>
           <RootNavigator />
+            <Toast config={toastConfig} />
         </WishlistProvider>
       </CartProvider>
     </AuthProvider>

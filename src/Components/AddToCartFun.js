@@ -5,6 +5,7 @@ import axios from "axios";
 import { useCart } from "../Context/CartContext";
 import BASE_URL from "../Config/api";
 import Toast from "react-native-toast-message";
+import { showToast } from "./CustomToast";
 
 export default function useAddToCart(customer_id) {
   const { setCartCount } = useCart();
@@ -43,15 +44,17 @@ export default function useAddToCart(customer_id) {
         // Alert.alert("Success", `Added ${quantity} × ${item.model_name} to cart`);
 
 
-        Toast.show({
-          type: "success",
-          text1: "Added to Cart ✅",
-          text2: `${quantity} × ${item.model_name} added successfully`,
-          position: "bottom",
-          visibilityTime: 3000,
-          text1Style: { fontSize: 15, fontWeight: "bold" }, // Large toast
-          text2Style: { fontSize: 12 },
-        });
+        // Toast.show({
+        //   type: "success",
+        //   text1: "Added to Cart ✅",
+        //   text2: `${quantity} × ${item.model_name} added successfully`,
+        //   position: "bottom",
+        //   visibilityTime: 3000,
+        //   text1Style: { fontSize: 15, fontWeight: "bold" }, // Large toast
+        //   text2Style: { fontSize: 12 },
+        // });
+
+        showToast("success", "Success!", "Add to Cart successfully!");
 
         // ✅ immediately update cart badge
         if (res.data.newCount !== undefined) {
@@ -61,26 +64,21 @@ export default function useAddToCart(customer_id) {
         }
       } else {
         // Alert.alert("Error", res.data.message || "Something went wrong");
-        Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: res.data.message || "Something went wrong",
-          position: "bottom",
-          text1Style: { fontSize: 15, fontWeight: "bold" },
-          text2Style: { fontSize: 12 },
-        });
+        // Toast.show({
+        //   type: "error",
+        //   text1: "Error",
+        //   text2: res.data.message || "Something went wrong",
+        //   position: "bottom",
+        //   text1Style: { fontSize: 15, fontWeight: "bold" },
+        //   text2Style: { fontSize: 12 },
+        // });
+        showToast("error", "Error!", "Something went wrong.");
       }
     } catch (error) {
       console.error("Add to Cart error:", error);
       // Alert.alert("Error", "Failed to add item to cart");
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: "Failed to add item to cart",
-        position: "bottom",
-        text1Style: { fontSize: 15, fontWeight: "bold" },
-        text2Style: { fontSize: 12 },
-      });
+             showToast("error", "Error!", "Something went wrong.");
+
     } finally {
       setLoading(false);
     }

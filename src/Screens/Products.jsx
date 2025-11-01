@@ -25,6 +25,7 @@ import useAddToCart from "../Components/AddToCartFun";
 import Toast from "react-native-toast-message";
 import { WishlistContext } from "../Context/WishlistContext";
 import SearchwithCart from "../Components/SearchwithCart";
+import FastImage from "@d11/react-native-fast-image"
 
 export default function Products({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -319,14 +320,14 @@ export default function Products({ navigation }) {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="green" style={{ marginTop: 10 }} />
-        // <View>
-        //   <FastImage
-        //     source={require("../assets/loading.gif")}
-        //     style={styles.gif}
-        //     resizeMode={FastImage.resizeMode.contain}
-        //   />
-        // </View>
+        // <ActivityIndicator size="large" color="green" style={{ marginTop: 10 }} />
+        <View>
+          <FastImage
+            source={require("../assets/loading.gif")}
+            style={styles.gif}
+            resizeMode={FastImage.resizeMode.contain}
+          />
+        </View>
       ) : filteredModels.length === 0 ? (
         <Text style={{ textAlign: "center", marginTop: 20 }}>No products found</Text>
       ) : (
@@ -342,7 +343,6 @@ export default function Products({ navigation }) {
         />
       )}
 
-      <Toast position="bottom" bottomOffset={90} />
     </View>
   );
 }

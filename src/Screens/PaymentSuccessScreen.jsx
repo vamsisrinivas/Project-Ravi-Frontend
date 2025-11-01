@@ -2,6 +2,8 @@
 import React, { useEffect } from "react";
 import { View, Text, StyleSheet, Image, Animated } from "react-native";
 // import LottieView from 'lottie-react-native';
+import FastImage from "@d11/react-native-fast-image"
+
 
 export default function PaymentSuccessScreen({ route, navigation }) {
     const { order_id, razorpay_order_id, amount } = route.params || {};
@@ -30,14 +32,14 @@ export default function PaymentSuccessScreen({ route, navigation }) {
     return (
         <View style={styles.container}>
             <Animated.View style={{ opacity: fadeAnim, alignItems: "center" }}>
-                <Image source={{ uri: "https://cdn-icons-png.flaticon.com/512/845/845646.png", }} style={styles.icon} />
+                {/* <Image source={{ uri: "https://cdn-icons-png.flaticon.com/512/845/845646.png", }} style={styles.icon} /> */}
                 {/* <Image
                     source={require("../assets/Order.gif")}
                     style={styles.gif}
                 /> */}
 
-                {/* <FastImage source={require("../assets/Order.gif")}
-                    style={styles.gif} /> */}
+                <FastImage source={require("../assets/Order.gif")}
+                    style={styles.gif} />
                 <Text style={styles.title}>Payment Successful!</Text>
                 <Text style={styles.message}>Thank you for your purchase 🎉</Text>
 

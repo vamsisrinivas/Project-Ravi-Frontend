@@ -341,6 +341,7 @@ import BASE_URL from "../Config/api";
 import { Picker } from "@react-native-picker/picker";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
+import { showToast } from "../Components/CustomToast";
 
 export default function AddressScreen() {
   const navigation = useNavigation();
@@ -409,6 +410,7 @@ export default function AddressScreen() {
   const handleSubmit = async () => {
     if (!form.full_name || !form.phone || !form.address_line1) {
       Alert.alert("Validation", "Please fill all required fields.");
+      showToast("warning", "Warmomg!", "Please fill all required fields!");
       return;
     }
 
@@ -435,6 +437,7 @@ export default function AddressScreen() {
         }
 
         Alert.alert("Success", "Address added successfully!");
+        showToast("success", "Success", "Address added successfully!!");
       }
 
       setForm({
@@ -459,8 +462,26 @@ export default function AddressScreen() {
         "Error",
         err.response?.data?.message || "Failed to submit address"
       );
+      showToast("error", "Error", "Failed to submit address!");
     }
   };
+
+  // const handleDelete = async (id) => {
+  //   Alert.alert("Delete Address", "Are you sure?", [
+  //     { text: "Cancel" },
+  //     {
+  //       text: "Yes",
+  //       onPress: async () => {
+  //         try {
+  //           await axios.delete(`${BASE_URL}/api/addresses/deleteAddress/${id}`);
+  //           fetchAddresses();
+  //         } catch (err) {
+  //           console.log(err.message);
+  //         }
+  //       },
+  //     },
+  //   ]);
+  // };
 
   const handleDelete = async (id) => {
     Alert.alert("Delete Address", "Are you sure?", [
@@ -470,14 +491,25 @@ export default function AddressScreen() {
         onPress: async () => {
           try {
             await axios.delete(`${BASE_URL}/api/addresses/deleteAddress/${id}`);
-            fetchAddresses();
+
+            // ✅ Instantly update local state
+            setAddresses((prev) => {
+              const updated = prev.filter((item) => item.id !== id);
+              return updated;
+            });
+            // showToast("warning", "Delete", "Deleted Your Address!");
+            // ✅ Optional: if backend changes need confirmation, re-fetch
+            // await fetchAddresses();
+
           } catch (err) {
             console.log(err.message);
+            showToast("error", "Error", "Check it Once!");
           }
         },
       },
     ]);
   };
+
 
   const setDefaultAddress = async (addressId) => {
     const target = addresses.find((a) => a.id === addressId);
@@ -498,8 +530,10 @@ export default function AddressScreen() {
     try {
       await axios.patch(`${BASE_URL}/api/addresses/setDefault/${addressId}`);
       fetchAddresses();
+      showToast("success", "Success ✅", "Your Selected one is Default!");
     } catch (err) {
       console.log("Set default error:", err.response?.data || err.message);
+      showToast("error", "Error", "Selected one is Not Default!");
       fetchAddresses();
     }
   };
@@ -610,7 +644,7 @@ export default function AddressScreen() {
         {/* Address Type Picker */}
         <View style={styles.row}>
           <Text style={{ marginRight: 10, color: "#000" }}>Address Type:</Text>
-          <View style={{ flex: 1, backgroundColor: "#fff", borderRadius: 8, borderWidth: 1, borderColor: "#050505ff",padding:1.5 }}>
+          <View style={{ flex: 1, backgroundColor: "#fff", borderRadius: 8, borderWidth: 1, borderColor: "#050505ff", padding: 1.5 }}>
             <Picker
               selectedValue={form.address_type}
               style={{
@@ -697,32 +731,20 @@ export default function AddressScreen() {
               <Text style={styles.addressText}>Landmark: {addr.landmark}</Text>
             )}
 
-            {/* <View style={styles.actions}>
+
+            <View style={styles.actions}>
               {addr.is_default !== 1 && (
-                <TouchableOpacity onPress={() => setDefaultAddress(addr.id)}>
+                <TouchableOpacity onPress={() => setDefaultAddress(addr.id)} style={styles.actionButton}>
                   <Text style={styles.setDefault}>Set Default</Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity onPress={() => handleEdit(addr)}>
+              <TouchableOpacity onPress={() => handleEdit(addr)} style={styles.actionButton}>
                 <Text style={styles.edit}>Edit</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDelete(addr.id)}>
+              <TouchableOpacity onPress={() => handleDelete(addr.id)} style={styles.actionButton}>
                 <Text style={styles.delete}>Delete</Text>
               </TouchableOpacity>
-            </View> */}
-            <View style={styles.actions}>
-  {addr.is_default !== 1 && (
-    <TouchableOpacity onPress={() => setDefaultAddress(addr.id)} style={styles.actionButton}>
-      <Text style={styles.setDefault}>Set Default</Text>
-    </TouchableOpacity>
-  )}
-  <TouchableOpacity onPress={() => handleEdit(addr)} style={styles.actionButton}>
-    <Text style={styles.edit}>Edit</Text>
-  </TouchableOpacity>
-  <TouchableOpacity onPress={() => handleDelete(addr.id)} style={styles.actionButton}>
-    <Text style={styles.delete}>Delete</Text>
-  </TouchableOpacity>
-</View>
+            </View>
 
           </View>
         ))
@@ -836,7 +858,7 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     alignItems: 'right',
-    justifyContent:"flex-end", // even spacing
+    justifyContent: "flex-end", // even spacing
     marginTop: 10,
   },
   actionButton: {
