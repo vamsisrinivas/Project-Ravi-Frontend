@@ -417,7 +417,10 @@ export default function AddressScreen() {
     try {
       if (form.id) {
         await axios.put(`${BASE_URL}/api/addresses/updateAddress/${form.id}`, form);
-        Alert.alert("Success", "Address updated successfully!");
+        // Alert.alert("Success", "Address updated successfully!");
+
+              showToast("success", "success!", "Address updated successfully!");
+
       } else {
         await axios.post(`${BASE_URL}/api/addresses/addAddress`, {
           ...form,
@@ -436,7 +439,7 @@ export default function AddressScreen() {
           });
         }
 
-        Alert.alert("Success", "Address added successfully!");
+        // Alert.alert("Success", "Address added successfully!");
         showToast("success", "Success", "Address added successfully!!");
       }
 
@@ -500,6 +503,7 @@ export default function AddressScreen() {
             // showToast("warning", "Delete", "Deleted Your Address!");
             // ✅ Optional: if backend changes need confirmation, re-fetch
             // await fetchAddresses();
+            showToast("warning", "Deleted", "Address Deleted!");
 
           } catch (err) {
             console.log(err.message);

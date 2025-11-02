@@ -72,14 +72,14 @@ export const showToast = (type, title, message, duration = 3000, position = "top
 // 🔹 Styles
 const styles = StyleSheet.create({
   toastBase: {
-    width: width * 0.9,
-    borderRadius: 18,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    width: width * 0.6,
+    borderRadius: 28,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
-    borderWidth: 1,
+    borderWidth: 3,
     borderColor: "rgba(0,0,0,0.1)",
     shadowColor: "#000",
     shadowOpacity: 0.15,
