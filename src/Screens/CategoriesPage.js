@@ -220,6 +220,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import BASE_URL from '../Config/api';
 import GoHomeButton from '../Components/GoHomeButton';
 import SearchwithCart from '../Components/SearchwithCart';
+import FastImage from '@d11/react-native-fast-image';
 
 export default function CategoriesPage() {
   const route = useRoute();

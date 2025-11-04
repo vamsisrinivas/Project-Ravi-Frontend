@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   SafeAreaView,
   TouchableOpacity,
-  Animated
+  Animated,LayoutAnimation, Platform, UIManager
 } from "react-native";
 import axios from "axios";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -114,7 +114,7 @@ const Orders = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
   const { user } = useContext(AuthContext);
   const customer_id = user?.customer_id;
   const navigation = useNavigation();
@@ -180,60 +180,137 @@ const Orders = () => {
     fetchOrders(1, true);
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.orderCard}>
-      <View style={styles.orderHeader}>
-        <Text style={styles.orderId}>Order ID: {item.order_id}</Text>
-        <Text
-          style={[
-            styles.status,
-            statusStyles[item.status?.toLowerCase()] || statusStyles.OrderPlaced,
-            { color: statusStyles[item.status?.toLowerCase()]?.color || "#C62828" },
-          ]}
+
+  // Enable LayoutAnimation on Android
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+const toggleExpand = (orderId) => {
+  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
+};
+
+  // const renderItem = ({ item }) => (
+  //   <View style={styles.orderCard}>
+  //     <View style={styles.orderHeader}>
+  //       <Text style={styles.orderId}>Order ID: {item.order_id}</Text>
+  //       <Text
+  //         style={[
+  //           styles.status,
+  //           statusStyles[item.status?.toLowerCase()] || statusStyles.OrderPlaced,
+  //           { color: statusStyles[item.status?.toLowerCase()]?.color || "#C62828" },
+  //         ]}
+  //       >
+  //         {item.status.toUpperCase()}
+  //       </Text>
+  //     </View>
+
+  //     {item.items?.map((it) => (
+  //       <View key={`${item.order_id}-${it.id}`} style={styles.itemRow}>
+  //         {/* <TouchableOpacity
+  //           onPress={() =>
+  //             navigation.navigate("Home", {
+  //               screen: "ProductDetailPage",
+  //               params: { product: it.product },
+  //             })
+  //           }
+  //           activeOpacity={0.9}
+  //         >
+  //           <Image
+  //             source={{ uri: it.product?.model_image || "https://via.placeholder.com/80" }}
+  //             style={styles.image}
+  //           />
+  //         </TouchableOpacity> */}
+
+  //         <View style={{ flex: 1 }}>
+  //           <Text style={styles.productName}>{it.product?.model_name || "Model Item"}</Text>
+  //           <Text style={styles.price}>₹ {it.price} × {it.quantity}</Text>
+  //         </View>
+  //       </View>
+  //     ))}
+
+  //     <OrderStatusBar deliverystatus={item.deliverystatus} />
+
+  //     <View style={styles.footer}>
+  //       <Text style={styles.amount}>Total: ₹{item.order_total}</Text>
+  //       <TouchableOpacity style={styles.detailsButton} onPress={() =>
+  //         navigation.navigate("Home", {
+  //           screen: "OrderDetails",
+  //           params: { order_id: item.order_id },
+  //         })}>
+  //         <Ionicons name="receipt-outline" size={18} color="#fff" />
+  //         <Text style={styles.detailsText}>View Details</Text>
+  //       </TouchableOpacity>
+  //     </View>
+  //   </View>
+  // );
+
+  const renderItem = ({ item }) => {
+    const isExpanded = expandedOrderId === item.order_id;
+
+    return (
+      <View style={styles.orderCard}>
+        <TouchableOpacity
+          style={styles.orderHeader}
+          onPress={() => toggleExpand(item.order_id)}
+          activeOpacity={0.8}
         >
-          {item.status.toUpperCase()}
-        </Text>
-      </View>
-
-      {item.items?.map((it) => (
-        <View key={`${item.order_id}-${it.id}`} style={styles.itemRow}>
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("Home", {
-                screen: "ProductDetailPage",
-                params: { product: it.product },
-              })
-            }
-            activeOpacity={0.9}
-          >
-            <Image
-              source={{ uri: it.product?.model_image || "https://via.placeholder.com/80" }}
-              style={styles.image}
+          <Text style={styles.orderId}>Order ID: {item.order_id}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text
+              style={[
+                styles.status,
+                statusStyles[item.status?.toLowerCase()] || statusStyles.OrderPlaced,
+                { color: statusStyles[item.status?.toLowerCase()]?.color || "#C62828" },
+              ]}
+            >
+              {item.status.toUpperCase()}
+            </Text>
+            <Ionicons
+              name={isExpanded ? "chevron-up" : "chevron-down"}
+              size={20}
+              color="#4CAF50"
+              style={{ marginLeft: 6 }}
             />
-          </TouchableOpacity>
-
-          <View style={{ flex: 1 }}>
-            <Text style={styles.productName}>{it.product?.model_name || "Model Item"}</Text>
-            <Text style={styles.price}>₹ {it.price} × {it.quantity}</Text>
           </View>
-        </View>
-      ))}
-
-      <OrderStatusBar deliverystatus={item.deliverystatus} />
-
-      <View style={styles.footer}>
-        <Text style={styles.amount}>Total: ₹{item.order_total}</Text>
-        <TouchableOpacity style={styles.detailsButton} onPress={() =>
-          navigation.navigate("Home", {
-            screen: "OrderDetails",
-            params: { order_id: item.order_id },
-          })}>
-          <Ionicons name="receipt-outline" size={18} color="#fff" />
-          <Text style={styles.detailsText}>View Details</Text>
         </TouchableOpacity>
+
+        {/* 🔽 Items (collapsible section) */}
+        {isExpanded && (
+          <View style={{ marginTop: 5 }}>
+            {item.items?.map((it) => (
+              <View key={`${item.order_id}-${it.id}`} style={styles.itemRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.productName}>{it.product?.model_name || "Model Item"}</Text>
+                  <Text style={styles.price}>₹ {it.price} × {it.quantity}</Text>
+                </View>
+              </View>
+            ))}
+
+            <OrderStatusBar deliverystatus={item.deliverystatus} />
+
+            <View style={styles.footer}>
+              <Text style={styles.amount}>Total: ₹{item.order_total}</Text>
+              <TouchableOpacity
+                style={styles.detailsButton}
+                onPress={() =>
+                  navigation.navigate("Home", {
+                    screen: "OrderDetails",
+                    params: { order_id: item.order_id },
+                  })
+                }
+              >
+                <Ionicons name="receipt-outline" size={18} color="#fff" />
+                <Text style={styles.detailsText}>View Details</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </View>
-    </View>
-  );
+    );
+  };
+
 
   if (loading && page === 1)
     return (

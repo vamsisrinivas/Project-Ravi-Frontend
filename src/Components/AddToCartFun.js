@@ -41,18 +41,7 @@ export default function useAddToCart(customer_id) {
       console.log("API response:", res.data);
 
       if (res.data.success === 1 || res.data.success === true) {
-        // Alert.alert("Success", `Added ${quantity} × ${item.model_name} to cart`);
-
-
-        // Toast.show({
-        //   type: "success",
-        //   text1: "Added to Cart ✅",
-        //   text2: `${quantity} × ${item.model_name} added successfully`,
-        //   position: "bottom",
-        //   visibilityTime: 3000,
-        //   text1Style: { fontSize: 15, fontWeight: "bold" }, // Large toast
-        //   text2Style: { fontSize: 12 },
-        // });
+     
 
         showToast("success", "Success!", "Add to Cart successfully!");
 
@@ -63,15 +52,7 @@ export default function useAddToCart(customer_id) {
           setCartCount((prev) => prev + quantity);
         }
       } else {
-        // Alert.alert("Error", res.data.message || "Something went wrong");
-        // Toast.show({
-        //   type: "error",
-        //   text1: "Error",
-        //   text2: res.data.message || "Something went wrong",
-        //   position: "bottom",
-        //   text1Style: { fontSize: 15, fontWeight: "bold" },
-        //   text2Style: { fontSize: 12 },
-        // });
+ 
         showToast("error", "Error!", "Something went wrong.");
       }
     } catch (error) {
