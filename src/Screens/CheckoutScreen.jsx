@@ -137,16 +137,7 @@ export default function CheckoutScreen({ navigation }) {
     }
   };
 
-  if (isRedirecting) {
-    return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#1a8e55" />
-        <Text style={{ marginTop: 10, color: "#1a8e55", fontWeight: "600" }}>
-          Redirecting to success screen...
-        </Text>
-      </View>
-    );
-  }
+
 
   // Product discount and totals (local calculation)
   const {
@@ -377,6 +368,17 @@ export default function CheckoutScreen({ navigation }) {
   }
 
   if (!cartItems.length) return null;
+
+    if (isRedirecting) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#1a8e55" />
+        <Text style={{ marginTop: 10, color: "#1a8e55", fontWeight: "600" }}>
+          Redirecting to success screen...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f9f9f9" }}>
