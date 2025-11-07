@@ -246,68 +246,103 @@ const toggleExpand = (orderId) => {
   //   </View>
   // );
 
+
+
+  
   const renderItem = ({ item }) => {
-    const isExpanded = expandedOrderId === item.order_id;
+ const isExpanded = expandedOrderId === item.order_id;
 
-    return (
-      <View style={styles.orderCard}>
-        <TouchableOpacity
-          style={styles.orderHeader}
-          onPress={() => toggleExpand(item.order_id)}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.orderId}>Order ID: {item.order_id}</Text>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text
-              style={[
-                styles.status,
-                statusStyles[item.status?.toLowerCase()] || statusStyles.OrderPlaced,
-                { color: statusStyles[item.status?.toLowerCase()]?.color || "#C62828" },
-              ]}
-            >
-              {item.status.toUpperCase()}
-            </Text>
-            <Ionicons
-              name={isExpanded ? "chevron-up" : "chevron-down"}
-              size={20}
-              color="#4CAF50"
-              style={{ marginLeft: 6 }}
-            />
-          </View>
-        </TouchableOpacity>
+  return (
+    <View style={styles.orderCard}>
+      {/* Header (Order ID + Status) */}
+      <TouchableOpacity
+        style={styles.orderHeader}
+        onPress={() => toggleExpand(item.order_id)}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.orderId}>Order ID: {item.order_id}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Text
+            style={[
+              styles.status,
+              statusStyles[item.status?.toLowerCase()] || statusStyles.OrderPlaced,
+              { color: statusStyles[item.status?.toLowerCase()]?.color || "#C62828" },
+            ]}
+          >
+            {item.status.toUpperCase()}
+          </Text>
+          <Ionicons
+            name={isExpanded ? "chevron-up" : "chevron-down"}
+            size={20}
+            color="#4CAF50"
+            style={{ marginLeft: 6 }}
+          />
+        </View>
+      </TouchableOpacity>
 
-        {/* 🔽 Items (collapsible section) */}
-        {isExpanded && (
-          <View style={{ marginTop: 5 }}>
-            {item.items?.map((it) => (
-              <View key={`${item.order_id}-${it.id}`} style={styles.itemRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.productName}>{it.product?.model_name || "Model Item"}</Text>
-                  <Text style={styles.price}>₹ {it.price} × {it.quantity}</Text>
-                </View>
-              </View>
-            ))}
-
-            <OrderStatusBar deliverystatus={item.deliverystatus} />
-
-            <View style={styles.footer}>
-              <Text style={styles.amount}>Total: ₹{item.order_total}</Text>
+      {/* Expanded Content */}
+      {isExpanded && (
+        <View style={{ marginTop: 5 }}>
+          {/* ✅ Product Items List */}
+          {item.items?.map((it) => (
+            <View key={`${item.order_id}-${it.id}`} style={styles.itemRow}>
+              {/* Product Image */}
               <TouchableOpacity
-                style={styles.detailsButton}
                 onPress={() =>
                   navigation.navigate("Home", {
-                    screen: "OrderDetails",
-                    params: { order_id: item.order_id },
+                    screen: "ProductDetailPage",
+                    params: { product: it.product },
                   })
                 }
+                activeOpacity={0.8}
               >
-                <Ionicons name="receipt-outline" size={18} color="#fff" />
-                <Text style={styles.detailsText}>View Details</Text>
+                <Image
+                  source={{
+                    uri:
+                      it.product?.model_image ||
+                      "https://via.placeholder.com/100x100.png?text=No+Image",
+                  }}
+                  style={styles.itemImage}
+                />
               </TouchableOpacity>
+
+              {/* Product Info */}
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={styles.productName} numberOfLines={1}>
+                  {it.product?.model_name || "Unnamed Product"}
+                </Text>
+                <Text style={styles.segment}>
+                  {it.product?.segment || "General"}
+                </Text>
+                <Text style={styles.price}>
+                  ₹{it.price} × {it.quantity}
+                </Text>
+              </View>
             </View>
+          ))}
+
+          {/* ✅ Delivery Status Bar */}
+          <OrderStatusBar deliverystatus={item.deliverystatus} />
+
+          {/* ✅ Order Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.amount}>Total: ₹{item.order_total}</Text>
+            <TouchableOpacity
+              style={styles.detailsButton}
+              onPress={() =>
+                navigation.navigate("Home", {
+                  screen: "OrderDetails",
+                  params: { order_id: item.order_id },
+                })
+              }
+            >
+              <Ionicons name="receipt-outline" size={18} color="#fff" />
+              <Text style={styles.detailsText}>View Details</Text>
+            </TouchableOpacity>
           </View>
-        )}
-      </View>
+        </View>
+      )}
+    </View>
     );
   };
 
@@ -439,4 +474,44 @@ const styles = StyleSheet.create({
   statusLabel: { fontSize: 10, textAlign: "center", color: "#777" },
   statusTextActive: { color: "#4CAF50", fontWeight: "700" },
   statusTextInactive: { color: "#999" },
+
+  itemRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  backgroundColor: "#fafafa",
+  padding: 8,
+  borderRadius: 8,
+  marginBottom: 8,
+  elevation: 1,
+  shadowColor: "#000",
+  shadowOpacity: 0.05,
+  shadowOffset: { width: 0, height: 1 },
+  shadowRadius: 2,
+},
+
+itemImage: {
+  width: 80,
+  height: 80,
+  borderRadius: 10,
+  backgroundColor: "#f2f2f2",
+},
+
+productName: {
+  fontWeight: "600",
+  color: "#222",
+  fontSize: 15,
+},
+
+segment: {
+  color: "#777",
+  fontSize: 13,
+  marginVertical: 2,
+},
+
+price: {
+  color: "#1a8e55",
+  fontWeight: "700",
+  fontSize: 14,
+},
+
 });

@@ -21,9 +21,14 @@ const Stack = createNativeStackNavigator();
 function RootNavigator() {
   const [initialRoute, setInitialRoute] = useState(null);
 
-useEffect(()=>{
-  SplashScreen.hide()
-},[])
+ useEffect(() => {
+    const timer = setTimeout(() => {
+      SplashScreen.hide();
+    }, 2000); // ⏱️ 2 seconds delay
+
+    // cleanup (good practice)
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const checkUser = async () => {

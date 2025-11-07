@@ -1,3 +1,690 @@
+// import React, { useEffect, useState, useContext, useMemo, useCallback } from "react";
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   TouchableOpacity,
+//   SafeAreaView,
+//   ScrollView,
+//   Image,
+//   ActivityIndicator,
+//   Alert,
+//   TextInput,
+//   FlatList,
+//   Modal
+// } from "react-native";
+// import { AuthContext } from "../Context/AuthContext";
+// import axios from "axios";
+// import BASE_URL from "../Config/api";
+// import Ionicons from "react-native-vector-icons/Ionicons";
+// import { useFocusEffect } from "@react-navigation/native";
+// import RazorpayCheckout from "react-native-razorpay";
+// import { useCart } from "../Context/CartContext";
+
+// export default function CheckoutScreen({ navigation }) {
+//   const { user } = useContext(AuthContext);
+//   const customer_id = user?.customer_id;
+//   const { clearCartCount } = useCart();
+
+//   const [cartItems, setCartItems] = useState([]);
+//   const [address, setAddress] = useState(null);
+//   const [loading, setLoading] = useState(true);
+//   const [serverOrder, setServerOrder] = useState(null);
+//   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+
+//   // Coupon state
+//   const [availableCoupons, setAvailableCoupons] = useState([]);
+//   const [couponCodeInput, setCouponCodeInput] = useState("");
+//   const [appliedCoupon, setAppliedCoupon] = useState(null);
+//   const [couponDiscountAmount, setCouponDiscountAmount] = useState(0);
+//   const [couponMessage, setCouponMessage] = useState("");
+//   const [couponMessageType, setCouponMessageType] = useState(null);
+//   const [showCoupons, setShowCoupons] = useState(false);
+//   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+
+//   // Fetch cart + address + coupons
+//   useEffect(() => {
+//     if (customer_id) {
+//       fetchCart();
+//       fetchDefaultAddress(customer_id);
+//       fetchAvailableCoupons();
+//     }
+//   }, [customer_id]);
+
+//   useFocusEffect(
+//     useCallback(() => {
+//       if (customer_id) fetchDefaultAddress(customer_id);
+//     }, [customer_id])
+//   );
+
+//   const fetchCart = async () => {
+//     try {
+//       setLoading(true);
+//       const res = await axios.get(`${BASE_URL}/api/cart/${customer_id}`);
+//       if (res.data.success) setCartItems(res.data.data || []);
+//     } catch (err) {
+//       console.error("Cart fetch error:", err.message);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const fetchDefaultAddress = async (id) => {
+//     try {
+//       const res = await axios.get(`${BASE_URL}/api/addresses/customer/${id}/defaults`);
+//       if (res.data.success) setAddress(res.data.data?.shipping || null);
+//     } catch (err) {
+//       console.error("Address fetch error:", err.message);
+//       setAddress(null);
+//     }
+//   };
+
+//   const fetchAvailableCoupons = async () => {
+//     try {
+//       const res = await axios.get(`${BASE_URL}/api/coupons/all`);
+//       if (res.data.success) setAvailableCoupons(res.data.coupons || []);
+//     } catch (err) {
+//       console.error("Coupons fetch error:", err.message);
+//     }
+//   };
+
+//   // 🧮 Calculate totals
+//   const { itemAmount, productDiscountAmount, subtotalAfterDiscount, localGrandTotal } = useMemo(() => {
+//     const itemAmount = cartItems.reduce(
+//       (sum, item) => sum + parseFloat(item.product.price) * item.quantity,
+//       0
+//     );
+//     const productDiscountAmount = cartItems.reduce((sum, item) => {
+//       const pct = parseFloat(item.product.discount_percent || 0);
+//       return sum + ((parseFloat(item.product.price) * item.quantity * pct) / 100);
+//     }, 0);
+//     const subtotalAfterDiscount = itemAmount - productDiscountAmount;
+//     const localGrandTotal = subtotalAfterDiscount - couponDiscountAmount;
+//     return { itemAmount, productDiscountAmount, subtotalAfterDiscount, localGrandTotal };
+//   }, [cartItems, couponDiscountAmount]);
+
+//   // 🏷️ Apply coupon
+//   const applyCoupon = async (code = couponCodeInput) => {
+//     if (!code.trim()) {
+//       setCouponMessage("⚠️ Please enter a coupon code");
+//       setCouponMessageType("error");
+//       return;
+//     }
+//     try {
+//       setIsApplyingCoupon(true);
+//       const res = await axios.post(`${BASE_URL}/api/coupons/apply`, {
+//         coupon_code: code.trim(),
+//         customer_id,
+//         order_total: subtotalAfterDiscount,
+//       });
+//       if (res.data.success) {
+//         setAppliedCoupon(res.data.coupon_details || { coupon_code: code.trim() });
+//         setCouponDiscountAmount(Number(res.data.discount || 0));
+//         setCouponMessage("✅ Coupon applied successfully!");
+//         setCouponMessageType("success");
+//         setCouponCodeInput("");
+//       } else {
+//         setAppliedCoupon(null);
+//         setCouponDiscountAmount(0);
+//         setCouponMessage(res.data.message || "❌ Invalid or expired coupon.");
+//         setCouponMessageType("error");
+//       }
+//     } catch {
+//       setCouponMessage("❌ Coupon is not eligible.");
+//       setCouponMessageType("error");
+//     } finally {
+//       setIsApplyingCoupon(false);
+//     }
+//   };
+
+//   const removeCoupon = () => {
+//     setAppliedCoupon(null);
+//     setCouponDiscountAmount(0);
+//     setCouponMessage("");
+//     setCouponMessageType(null);
+//   };
+
+//   // 🛒 Qty handlers
+//   const increaseQty = async (id) => {
+//     setCartItems((prev) =>
+//       prev.map((item) => (item.id === id ? { ...item, quantity: item.quantity + 1 } : item))
+//     );
+//     await axios.put(`${BASE_URL}/api/cart/increment/${id}`).catch(() => {});
+//   };
+
+//   const decreaseQty = async (id) => {
+//     setCartItems((prev) =>
+//       prev.map((item) =>
+//         item.id === id && item.quantity > 1
+//           ? { ...item, quantity: item.quantity - 1 }
+//           : item
+//       )
+//     );
+//     await axios.put(`${BASE_URL}/api/cart/decrement/${id}`).catch(() => {});
+//   };
+
+//   const removeItem = async (id) => {
+//     await axios.delete(`${BASE_URL}/api/cart/delete/${id}`).catch(() => {});
+//     fetchCart();
+//   };
+
+//   // 🧾 Create order
+//   const createServerOrder = async () => {
+//     const itemsPayload = cartItems.map((item) => ({
+//       id: item.product.id,
+//       price: Number(item.product.price),
+//       quantity: item.quantity,
+//       discount_percent: Number(item.product.discount_percent || 0),
+//     }));
+
+//     try {
+//       const res = await axios.post(`${BASE_URL}/api/orders/create-order`, {
+//         customer_id,
+//         address_id: address.id,
+//         items: itemsPayload,
+//         coupon_code: appliedCoupon?.coupon_code || null,
+//         delivery_charge: 0,
+//       });
+//       if (res.data.success) {
+//         setServerOrder({
+//           order_id: res.data.order_id,
+//           razorpayOrder: res.data.razorpayOrder,
+//           finalAmount: res.data.finalAmount,
+//         });
+//         return res.data;
+//       } else {
+//         Alert.alert("Order Error", res.data.message);
+//       }
+//     } catch (err) {
+//       console.error("Order creation failed:", err.message);
+//       Alert.alert("Error", "Order creation failed.");
+//     }
+//   };
+
+//   // 💳 Handle payment
+//   const handlePayNow = async () => {
+//     if (!cartItems.length) return Alert.alert("Cart Empty", "Add items first.");
+//     if (!address) return Alert.alert("No Address", "Please select shipping address.");
+
+//     const created = await createServerOrder();
+//     if (!created) return;
+
+//     const { order_id, razorpayOrder, finalAmount } = created;
+//     const serverAmountPaise = razorpayOrder?.amount;
+
+//     const options = {
+//       description: "RV-AGRIHUB Payment",
+//       currency: "INR",
+//       key: process.env.RAZORPAY_KEY || "rzp_test_RX082JQF5LtgWu",
+//       amount: serverAmountPaise,
+//       order_id: razorpayOrder.id,
+//       name: "RV-AGRIHUB",
+//       prefill: {
+//         email: user?.email || "customer@example.com",
+//         contact: address.phone,
+//         name: address.full_name,
+//       },
+//       theme: { color: "#1a8e55" },
+//     };
+
+//     try {
+//       const paymentData = await RazorpayCheckout.open(options);
+//       setIsVerifyingPayment(true);
+
+//       const verifyRes = await axios.post(`${BASE_URL}/api/orders/verify-payment`, {
+//         order_id,
+//         razorpay_order_id: paymentData.razorpay_order_id,
+//         razorpay_payment_id: paymentData.razorpay_payment_id,
+//         razorpay_signature: paymentData.razorpay_signature,
+//       });
+
+//       if (verifyRes.data.success) {
+//         axios.delete(`${BASE_URL}/api/cart/clear/${customer_id}`).catch(() => {});
+//         clearCartCount?.();
+//         navigation.reset({
+//           index: 0,
+//           routes: [
+//             {
+//               name: "Home",
+//               state: {
+//                 routes: [
+//                   {
+//                     name: "PaymentSuccess",
+//                     params: { order_id, amount: Number(finalAmount).toFixed(2) },
+//                   },
+//                 ],
+//               },
+//             },
+//           ],
+//         });
+//       } else {
+//         setIsVerifyingPayment(false);
+//         Alert.alert("Verification Failed", verifyRes.data.message);
+//       }
+//     } catch {
+//       setIsVerifyingPayment(false);
+//       Alert.alert("Payment Cancelled", "Transaction not completed.");
+//     }
+//   };
+
+//   const displayedPayAmount = serverOrder
+//     ? Number(serverOrder.finalAmount).toFixed(2)
+//     : Number(localGrandTotal || 0).toFixed(2);
+
+//   if (loading)
+//     return (
+//       <View style={styles.loader}>
+//         <ActivityIndicator size="large" color="#1a8e55" />
+//       </View>
+//     );
+
+//   return (
+//     <SafeAreaView style={{ flex: 1, backgroundColor: "#f9f9f9" }}>
+//       <ScrollView contentContainerStyle={styles.container}>
+//         {/* Header */}
+//         <View style={styles.header}>
+//           <TouchableOpacity onPress={() => navigation.goBack()}>
+//             <Ionicons name="arrow-back" size={24} color="#000" />
+//           </TouchableOpacity>
+//           <Text style={styles.headerTitle}>Checkout</Text>
+//           <View style={{ width: 24 }} />
+//         </View>
+
+//         {/* Summary */}
+//         <View style={styles.summaryBox}>
+//           <Text style={styles.sectionTitle}>Order Summary</Text>
+
+//           <View style={styles.row}>
+//             <Text style={styles.label}>Items Total</Text>
+//             <Text style={styles.value}>₹{itemAmount.toFixed(2)}</Text>
+//           </View>
+//           <View style={styles.row}>
+//             <Text style={styles.label}>Product Discount</Text>
+//             <Text style={styles.value}>- ₹{productDiscountAmount.toFixed(2)}</Text>
+//           </View>
+//           <View style={styles.row}>
+//             <Text style={styles.label}>Subtotal</Text>
+//             <Text style={styles.value}>₹{subtotalAfterDiscount.toFixed(2)}</Text>
+//           </View>
+
+//           {/* Coupon Section */}
+//           <View style={{ marginTop: 10 }}>
+//             {appliedCoupon ? (
+//               <View style={styles.couponAppliedBox}>
+//                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+//                   <Text style={{ fontWeight: "700" }}>{appliedCoupon.coupon_code}</Text>
+//                   <TouchableOpacity onPress={removeCoupon}>
+//                     <Text style={{ color: "red", fontWeight: "600" }}>Remove</Text>
+//                   </TouchableOpacity>
+//                 </View>
+//                 <Text style={{ marginTop: 6, color: "#444" }}>
+//                   {appliedCoupon.description || "Coupon applied"}
+//                 </Text>
+//                 <View style={[styles.row, { marginTop: 8 }]}>
+//                   <Text style={styles.label}>Coupon Discount</Text>
+//                   <Text style={[styles.value, { color: "#2E7D32" }]}>
+//                     - ₹{couponDiscountAmount.toFixed(2)}
+//                   </Text>
+//                 </View>
+//                 {couponMessage && (
+//                   <Text
+//                     style={{
+//                       marginTop: 6,
+//                       color: couponMessageType === "error" ? "red" : "#2E7D32",
+//                       fontSize: 13,
+//                       fontWeight: "500",
+//                     }}
+//                   >
+//                     {couponMessage}
+//                   </Text>
+//                 )}
+//               </View>
+//             ) : (
+//               <>
+//                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+//                   <TextInput
+//                     placeholder="Enter coupon code"
+//                     value={couponCodeInput}
+//                     onChangeText={(text) => {
+//                       setCouponCodeInput(text);
+//                       setCouponMessage("");
+//                       setCouponMessageType(null);
+//                     }}
+//                     style={styles.couponInput}
+//                   />
+//                   <TouchableOpacity
+//                     onPress={() => applyCoupon(couponCodeInput)}
+//                     style={styles.couponButton}
+//                     disabled={isApplyingCoupon}
+//                   >
+//                     <Text style={{ color: "#fff", fontWeight: "700" }}>
+//                       {isApplyingCoupon ? "..." : "Apply"}
+//                     </Text>
+//                   </TouchableOpacity>
+//                 </View>
+
+//                 {couponMessage ? (
+//                   <Text
+//                     style={{
+//                       marginTop: 6,
+//                       color: couponMessageType === "error" ? "red" : "#2E7D32",
+//                       fontSize: 13,
+//                       fontWeight: "500",
+//                     }}
+//                   >
+//                     {couponMessage}
+//                   </Text>
+//                 ) : null}
+
+//                 {availableCoupons.length > 0 && (
+//                   <View style={{ marginTop: 10 }}>
+//                     <TouchableOpacity
+//                       onPress={() => setShowCoupons(!showCoupons)}
+//                       style={{
+//                         flexDirection: "row",
+//                         alignItems: "center",
+//                         justifyContent: "space-between",
+//                         backgroundColor: "#e8f5e9",
+//                         padding: 10,
+//                         borderRadius: 8,
+//                       }}
+//                     >
+//                       <Text style={{ fontWeight: "700", color: "#1a8e55" }}>
+//                         {showCoupons ? "Hide Coupons" : "View Coupons"}
+//                       </Text>
+//                       <Ionicons
+//                         name={showCoupons ? "chevron-up" : "chevron-down"}
+//                         size={20}
+//                         color="#1a8e55"
+//                       />
+//                     </TouchableOpacity>
+
+//                     {showCoupons && (
+//                       <FlatList
+//                         data={availableCoupons}
+//                         horizontal
+//                         keyExtractor={(c) => String(c.id)}
+//                         renderItem={({ item }) => (
+//                           <TouchableOpacity
+//                             style={styles.couponChip}
+//                             onPress={() => applyCoupon(item.coupon_code)}
+//                             activeOpacity={0.8}
+//                           >
+//                             <Text style={{ fontWeight: "700" }}>{item.coupon_code}</Text>
+//                             <Text style={{ fontSize: 12 }}>
+//                               {item.discount_type === "percentage"
+//                                 ? `${item.discount_value}% off`
+//                                 : `₹${item.discount_value} off`}
+//                             </Text>
+//                             {item.description && (
+//                               <Text
+//                                 style={{
+//                                   fontSize: 11,
+//                                   color: "#555",
+//                                   textAlign: "center",
+//                                 }}
+//                                 numberOfLines={2}
+//                               >
+//                                 {item.description}
+//                               </Text>
+//                             )}
+//                             <Text
+//                               style={{
+//                                 fontSize: 11,
+//                                 color: "#666",
+//                                 textAlign: "center",
+//                                 fontStyle: "italic",
+//                               }}
+//                             >
+//                               {item.min_order_amount
+//                                 ? `Min. order ₹${item.min_order_amount}`
+//                                 : "No minimum"}
+//                             </Text>
+//                           </TouchableOpacity>
+//                         )}
+//                       />
+//                     )}
+//                   </View>
+//                 )}
+//               </>
+//             )}
+//           </View>
+
+//           <View style={styles.divider} />
+//           <View style={styles.row}>
+//             <Text style={styles.totalLabel}>Total Payable</Text>
+//             <Text style={styles.totalValue}>₹{displayedPayAmount}</Text>
+//           </View>
+//         </View>
+
+//         {/* Items */}
+//         <View style={styles.itemsBox}>
+//           <Text style={styles.sectionTitle}>Items ({cartItems.length})</Text>
+//           {cartItems.map((item) => (
+//             <View key={item.id} style={styles.cartCard}>
+//               <Image source={{ uri: item.product.model_image }} style={styles.image} />
+//               <View style={styles.details}>
+//                 <Text style={styles.name}>{item.product.model_name}</Text>
+//                 <Text style={styles.segment}>{item.product.segment}</Text>
+//                 <Text style={styles.price}>₹ {item.product.price}</Text>
+//                 <View style={styles.qtyRow}>
+//                   <TouchableOpacity onPress={() => decreaseQty(item.id)}>
+//                     <Ionicons name="remove-circle-outline" size={22} color="#548c5c" />
+//                   </TouchableOpacity>
+//                   <Text style={styles.qty}>{item.quantity}</Text>
+//                   <TouchableOpacity onPress={() => increaseQty(item.id)}>
+//                     <Ionicons name="add-circle-outline" size={22} color="#548c5c" />
+//                   </TouchableOpacity>
+//                 </View>
+//               </View>
+//               <TouchableOpacity onPress={() => removeItem(item.id)}>
+//                 <Ionicons name="trash-outline" size={22} color="red" />
+//               </TouchableOpacity>
+//             </View>
+//           ))}
+//         </View>
+//        </ScrollView>
+
+//       <TouchableOpacity style={styles.payNowButton} onPress={handlePayNow}>
+//         <Text style={styles.payNowText}>Pay ₹{displayedPayAmount}</Text>
+//       </TouchableOpacity>
+
+//     <Modal
+//   visible={isVerifyingPayment}
+//   transparent
+//   animationType="fade"
+//   onRequestClose={() => {}}
+// >
+//   <View style={styles.overlay}>
+//     <View style={styles.modalBox}>
+//       <Text style={styles.modalTitle}>Verifying your payment securely...</Text>
+//       <Text style={styles.modalSubtitle}>Please don’t close or navigate away.</Text>
+//     </View>
+//   </View>
+// </Modal>
+
+
+
+//     </SafeAreaView>
+//   );
+// }
+// const styles = StyleSheet.create({
+//   container: { paddingBottom: 120 },
+//   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
+//   header: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     padding: 15,
+//     borderBottomWidth: 1,
+//     borderColor: "#eee",
+//     backgroundColor: "#fff",
+//   },
+//   headerTitle: { flex: 1, textAlign: "center", fontSize: 18, fontWeight: "600" },
+//   summaryBox: { backgroundColor: "#fff", margin: 12, borderRadius: 10, padding: 15, elevation: 3 },
+//   sectionTitle: { fontWeight: "700", fontSize: 16, marginBottom: 6 },
+//   row: { flexDirection: "row", justifyContent: "space-between", marginVertical: 6 },
+//   label: { fontSize: 15, color: "#444" },
+//   value: { fontSize: 15, fontWeight: "500", color: "#000" },
+//   divider: { height: 1, backgroundColor: "#ddd", marginVertical: 8 },
+//   totalLabel: { fontSize: 17, fontWeight: "700" },
+//   totalValue: { fontSize: 17, fontWeight: "700", color: "#1a8e55" },
+//   couponInput: {
+//     flex: 1,
+//     borderWidth: 1,
+//     borderColor: "#ccc",
+//     borderRadius: 8,
+//     paddingHorizontal: 10,
+//     height: 40,
+//   },
+//   couponButton: {
+//     backgroundColor: "#1a8e55",
+//     paddingHorizontal: 15,
+//     paddingVertical: 10,
+//     borderRadius: 8,
+//   },
+//   couponAppliedBox: {
+//     padding: 10,
+//     backgroundColor: "#f1fff3",
+//     borderRadius: 8,
+//     borderWidth: 1,
+//     borderColor: "#e0f1e7",
+//   },
+//   couponChip: {
+//     backgroundColor: "#fff",
+//     paddingVertical: 10,
+//     paddingHorizontal: 12,
+//     borderRadius: 10,
+//     marginRight: 10,
+//     borderWidth: 1,
+//     borderColor: "#e0e0e0",
+//     alignItems: "center",
+//     justifyContent: "center",
+//     width: 140,
+//     elevation: 2,
+//   },
+//   itemsBox: { backgroundColor: "#fff", margin: 12, borderRadius: 10, padding: 15, elevation: 3 },
+//   cartCard: {
+//     flexDirection: "row",
+//     backgroundColor: "#fff",
+//     borderRadius: 10,
+//     padding: 10,
+//     marginBottom: 12,
+//     elevation: 3,
+//   },
+//   image: { width: 80, height: 80, borderRadius: 8 },
+//   details: { flex: 1, marginLeft: 12 },
+//   name: { fontSize: 15, fontWeight: "600" },
+//   segment: { fontSize: 13, color: "#777" },
+//   price: { fontSize: 15, color: "#548c5c", fontWeight: "bold" },
+//   qtyRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
+//   qty: { marginHorizontal: 10, fontSize: 15, color: "#333" },
+//   payNowButton: {
+//     backgroundColor: "#1a8e55",
+//     paddingVertical: 16,
+//     alignItems: "center",
+//     position: "absolute",
+//     bottom: 0,
+//     width: "100%",
+//   },
+//   payNowText: { color: "#fff", fontSize: 17, fontWeight: "700" },
+//   transactionNotice: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "center",
+//     backgroundColor: "#e8f5e9",
+//     borderRadius: 8,
+//     padding: 10,
+//     marginHorizontal: 15,
+//     marginBottom: 10,
+//   },
+//   transactionText: {
+//     marginLeft: 8,
+//     color: "#1a8e55",
+//     fontSize: 14,
+//     fontWeight: "600",
+//   },
+
+//   // 💚 Modal Styles
+// overlay: {
+//   position: "absolute",
+//   top: 0,
+//   left: 0,
+//   right: 0,
+//   bottom: 0,
+//   backgroundColor: "rgba(0,0,0,0.65)",
+//   justifyContent: "center",  // ✅ Perfect vertical centering
+//   alignItems: "center",      // ✅ Perfect horizontal centering
+//   zIndex: 9999,
+// },
+// modalBox: {
+//   backgroundColor: "#fff",
+//   width: "80%",
+//   borderRadius: 18,
+//   paddingVertical: 30,
+//   paddingHorizontal: 20,
+//   alignItems: "center",
+//   justifyContent: "center",  // ✅ Center spinner + text inside
+//   elevation: 20,
+//   shadowColor: "#000",
+//   shadowOpacity: 0.3,
+//   shadowRadius: 10,
+//   shadowOffset: { width: 0, height: 4 },
+// },
+// modalTitle: {
+//   fontSize: 16,
+//   fontWeight: "700",
+//   color: "#1a8e55",
+//   textAlign: "center",
+//   marginBottom: 5,
+// },
+// modalSubtitle: {
+//   fontSize: 13,
+//   color: "#666",
+//   textAlign: "center",
+// },
+
+// overlay: {
+//   position: "absolute",
+//   top: 0,
+//   left: 0,
+//   right: 0,
+//   bottom: 0,
+//   backgroundColor: "rgba(0,0,0,0.65)",
+//   justifyContent: "center",  // ✅ Center vertically
+//   alignItems: "center",      // ✅ Center horizontally
+//   zIndex: 9999,
+// },
+// modalBox: {
+//   backgroundColor: "#fff",
+//   width: "80%",
+//   borderRadius: 18,
+//   paddingVertical: 40,       // ✅ Added a bit more padding for clean spacing
+//   paddingHorizontal: 20,
+//   alignItems: "center",
+//   justifyContent: "center",
+//   elevation: 20,
+//   shadowColor: "#000",
+//   shadowOpacity: 0.3,
+//   shadowRadius: 10,
+//   shadowOffset: { width: 0, height: 4 },
+// },
+// modalTitle: {
+//   fontSize: 16,
+//   fontWeight: "700",
+//   color: "#1a8e55",
+//   textAlign: "center",
+//   marginBottom: 8,
+// },
+// modalSubtitle: {
+//   fontSize: 13,
+//   color: "#666",
+//   textAlign: "center",
+// },
+
+
+// });
+
+
 
 import React, { useEffect, useState, useContext, useMemo, useCallback } from "react";
 import {
@@ -12,6 +699,7 @@ import {
   Alert,
   TextInput,
   FlatList,
+  Animated,
 } from "react-native";
 import { AuthContext } from "../Context/AuthContext";
 import axios from "axios";
@@ -24,24 +712,24 @@ import { useCart } from "../Context/CartContext";
 export default function CheckoutScreen({ navigation }) {
   const { user } = useContext(AuthContext);
   const customer_id = user?.customer_id;
+  const { clearCartCount } = useCart();
+
   const [cartItems, setCartItems] = useState([]);
   const [address, setAddress] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isRedirecting, setIsRedirecting] = useState(false);
-
-  const { clearCartCount } = useCart();
+  const [serverOrder, setServerOrder] = useState(null);
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
   // Coupons
   const [availableCoupons, setAvailableCoupons] = useState([]);
   const [couponCodeInput, setCouponCodeInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponDiscountAmount, setCouponDiscountAmount] = useState(0);
+  const [couponMessage, setCouponMessage] = useState("");
+  const [couponMessageType, setCouponMessageType] = useState(null);
+  const [showCoupons, setShowCoupons] = useState(false);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
-  // Payment authoritative values returned by server when creating order
-  const [serverOrder, setServerOrder] = useState(null); // { order_id, razorpayOrder, finalAmount }
-
-  // Fetch cart and address
   useEffect(() => {
     if (customer_id) {
       fetchCart();
@@ -49,6 +737,12 @@ export default function CheckoutScreen({ navigation }) {
       fetchAvailableCoupons();
     }
   }, [customer_id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (customer_id) fetchDefaultAddress(customer_id);
+    }, [customer_id])
+  );
 
   const fetchCart = async () => {
     try {
@@ -65,51 +759,87 @@ export default function CheckoutScreen({ navigation }) {
   const fetchDefaultAddress = async (id) => {
     try {
       const res = await axios.get(`${BASE_URL}/api/addresses/customer/${id}/defaults`);
-      if (res.data.success) {
-        setAddress(res.data.data?.shipping || null);
-      }
-    } catch (err) {
-      console.error("Address fetch error:", err.message);
+      if (res.data.success) setAddress(res.data.data?.shipping || null);
+    } catch {
       setAddress(null);
     }
   };
 
-  // Fetch active coupons from backend
   const fetchAvailableCoupons = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/coupons/all`); // endpoint expected
-      if (res.data.success) {
-        setAvailableCoupons(res.data.coupons || []);
-      }
+      const res = await axios.get(`${BASE_URL}/api/coupons/all`);
+      if (res.data.success) setAvailableCoupons(res.data.coupons || []);
     } catch (err) {
-      console.error("Fetch coupons error:", err.message);
+      console.error("Coupon fetch error:", err.message);
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      if (customer_id) fetchDefaultAddress(customer_id);
-    }, [customer_id])
-  );
+  // 🧮 Totals
+  const { itemAmount, productDiscountAmount, subtotalAfterDiscount, localGrandTotal } = useMemo(() => {
+    const itemAmount = cartItems.reduce(
+      (sum, item) => sum + parseFloat(item.product.price) * item.quantity,
+      0
+    );
+    const productDiscountAmount = cartItems.reduce((sum, item) => {
+      const pct = parseFloat(item.product.discount_percent || 0);
+      return sum + ((parseFloat(item.product.price) * item.quantity * pct) / 100);
+    }, 0);
+    const subtotalAfterDiscount = itemAmount - productDiscountAmount;
+    const localGrandTotal = subtotalAfterDiscount - couponDiscountAmount;
+    return { itemAmount, productDiscountAmount, subtotalAfterDiscount, localGrandTotal };
+  }, [cartItems, couponDiscountAmount]);
+
+  // 🏷️ Apply coupon
+  const applyCoupon = async (code = couponCodeInput) => {
+    if (!code.trim()) {
+      setCouponMessage("⚠️ Please enter a coupon code");
+      setCouponMessageType("error");
+      return;
+    }
+    try {
+      setIsApplyingCoupon(true);
+      const res = await axios.post(`${BASE_URL}/api/coupons/apply`, {
+        coupon_code: code.trim(),
+        customer_id,
+        order_total: subtotalAfterDiscount,
+      });
+      if (res.data.success) {
+        setAppliedCoupon(res.data.coupon_details);
+        setCouponDiscountAmount(Number(res.data.discount || 0));
+        setCouponMessage("✅ Coupon applied successfully!");
+        setCouponMessageType("success");
+        setCouponCodeInput("");
+      } else {
+        setAppliedCoupon(null);
+        setCouponDiscountAmount(0);
+        setCouponMessage(res.data.message || "❌ Invalid coupon");
+        setCouponMessageType("error");
+      }
+    } catch {
+      setCouponMessage("❌ Coupon not eligible");
+      setCouponMessageType("error");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponDiscountAmount(0);
+    setCouponMessage("");
+    setCouponMessageType(null);
+  };
 
   const increaseQty = async (id) => {
-    // ✅ Update UI instantly
     setCartItems((prev) =>
       prev.map((item) =>
         item.id === id ? { ...item, quantity: item.quantity + 1 } : item
       )
     );
-
-    // ✅ Async update backend (no fetchCart)
-    try {
-      await axios.put(`${BASE_URL}/api/cart/increment/${id}`);
-    } catch (err) {
-      console.error("Increase qty error:", err.message);
-    }
+    await axios.put(`${BASE_URL}/api/cart/increment/${id}`).catch(() => { });
   };
 
   const decreaseQty = async (id) => {
-    // ✅ Update UI instantly
     setCartItems((prev) =>
       prev.map((item) =>
         item.id === id && item.quantity > 1
@@ -117,178 +847,57 @@ export default function CheckoutScreen({ navigation }) {
           : item
       )
     );
-
-    // ✅ Async update backend (no fetchCart)
-    try {
-      await axios.put(`${BASE_URL}/api/cart/decrement/${id}`);
-    } catch (err) {
-      console.error("Decrease qty error:", err.message);
-    }
+    await axios.put(`${BASE_URL}/api/cart/decrement/${id}`).catch(() => { });
   };
-
 
   const removeItem = async (id) => {
-    try {
-      await axios.delete(`${BASE_URL}/api/cart/delete/${id}`);
-      await fetchCart();
-      Alert.alert("Removed", "Item removed from cart.");
-    } catch (err) {
-      console.error("Remove item error:", err.message);
-    }
+    await axios.delete(`${BASE_URL}/api/cart/delete/${id}`).catch(() => { });
+    fetchCart();
   };
 
-
-
-  // Product discount and totals (local calculation)
-  const {
-    itemAmount, // sum of product prices * qty
-    productDiscountAmount, // sum of per-product percentage discounts
-    subtotalAfterProductDiscount, // itemAmount - productDiscountAmount
-    gstAmount,
-    localGrandTotal, // preliminary local total before coupon
-  } = useMemo(() => {
-    const itemAmount = cartItems.reduce(
-      (sum, item) => sum + parseFloat(item.product.price) * item.quantity,
-      0
-    );
-
-    const productDiscountAmount = cartItems.reduce((sum, item) => {
-      const pct = parseFloat(item.product.discount_percent || 0);
-      return sum + ((parseFloat(item.product.price) * item.quantity * pct) / 100);
-    }, 0);
-
-    const subtotalAfterProductDiscount = itemAmount - productDiscountAmount;
-    const gstAmount = subtotalAfterProductDiscount * 0; // change if needed
-    const localGrandTotal = subtotalAfterProductDiscount + gstAmount - couponDiscountAmount;
-
-    return {
-      itemAmount,
-      productDiscountAmount,
-      subtotalAfterProductDiscount,
-      gstAmount,
-      localGrandTotal,
-    };
-  }, [cartItems, couponDiscountAmount]);
-
-  // Apply coupon by calling backend /api/coupons/apply
-  const applyCoupon = async (code = couponCodeInput) => {
-    if (!code || !code.trim()) return Alert.alert("Enter coupon code");
-
-    try {
-      setIsApplyingCoupon(true);
-      // send order_total so backend can validate min_order_amount etc.
-      const res = await axios.post(`${BASE_URL}/api/coupons/apply`, {
-        coupon_code: code.trim(),
-        customer_id,
-        order_total: subtotalAfterProductDiscount, // backend uses pre-coupon amount to validate
-      });
-
-      if (res.data.success) {
-        // backend should return discount number and coupon details
-        setAppliedCoupon(res.data.coupon_details || { coupon_code: code.trim() });
-        setCouponDiscountAmount(Number(res.data.discount || 0));
-        setCouponCodeInput("");
-        Alert.alert("Coupon applied", res.data.message || "Coupon applied");
-      } else {
-        // backend returned failure (invalid/expired/min order)
-        setAppliedCoupon(null);
-        setCouponDiscountAmount(0);
-        Alert.alert("Coupon error", res.data.message || "Cannot apply coupon");
-      }
-    } catch (err) {
-      console.error("Apply coupon error:", err.message);
-      Alert.alert("Error", "Failed to apply coupon");
-    } finally {
-      setIsApplyingCoupon(false);
-    }
-  };
-
-  // Remove coupon locally (does not touch backend yet)
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponDiscountAmount(0);
-    setCouponCodeInput("");
-    Alert.alert("Coupon removed", "Coupon removed from order");
-  };
-
-  // Create order on server BEFORE opening Razorpay.
-  // This ensures server-final amount and razorpayOrder.amount are authoritative.
+  // 🧾 Create order
   const createServerOrder = async () => {
-    // Build items payload expected by backend
     const itemsPayload = cartItems.map((item) => ({
       id: item.product.id,
       price: Number(item.product.price),
       quantity: item.quantity,
-      discount_percent: Number(item.product.discount_percent || 0), // ✅ send product discount
+      discount_percent: Number(item.product.discount_percent || 0),
     }));
 
     try {
-      setLoading(true);
-      const payload = {
+      const res = await axios.post(`${BASE_URL}/api/orders/create-order`, {
         customer_id,
         address_id: address.id,
         items: itemsPayload,
         coupon_code: appliedCoupon?.coupon_code || null,
         delivery_charge: 0,
-      };
-
-      const res = await axios.post(`${BASE_URL}/api/orders/create-order`, payload);
-
+      });
       if (res.data.success) {
-        // server must return razorpayOrder (amount in paise) and finalAmount (number)
-        setServerOrder({
-          order_id: res.data.order_id,
-          razorpayOrder: res.data.razorpayOrder,
-          finalAmount: Number(res.data.finalAmount ?? res.data.order_total ?? 0),
-        });
-
-        return {
-          ok: true,
-          order_id: res.data.order_id,
-          razorpayOrder: res.data.razorpayOrder,
-          finalAmount: Number(res.data.finalAmount ?? res.data.order_total ?? 0),
-        };
+        setServerOrder(res.data);
+        return res.data;
       } else {
-        Alert.alert("Order error", res.data.message || "Failed to create order");
-        return { ok: false, message: res.data.message };
+        Alert.alert("Order Error", res.data.message);
       }
     } catch (err) {
-      console.error("Create order error:", err.message);
-      Alert.alert("Error", "Failed to create order on server");
-      return { ok: false, message: err.message };
-    } finally {
-      setLoading(false);
+      console.error("Order creation error:", err.message);
+      Alert.alert("Error", "Order creation failed.");
     }
   };
 
-  // Pay Now: create server order, then open Razorpay using server's razorpayOrder.amount
+  // 💳 Payment
   const handlePayNow = async () => {
-    if (!cartItems.length) {
-      return Alert.alert("Cart Empty", "Add items before checkout.");
-    }
-    if (!address) {
-      return Alert.alert("No Address", "Please select shipping address.");
-    }
+    if (!cartItems.length) return Alert.alert("Cart Empty", "Add items first.");
+    if (!address) return Alert.alert("No Address", "Please select a shipping address.");
 
-    // 1) Create order on server to get authoritative amount (paise)
     const created = await createServerOrder();
-    if (!created.ok) return;
+    if (!created) return;
 
     const { order_id, razorpayOrder, finalAmount } = created;
-
-    // 2) Use server razorpayOrder.amount (paise) — MUST match Pay button display
-    const serverAmountPaise = razorpayOrder?.amount;
-    if (!serverAmountPaise) {
-      Alert.alert("Payment Error", "Server did not return payment amount.");
-      return;
-    }
-
     const options = {
-      description: "RV-AGRIHUB Order Payment",
-      image: "https://your-logo-url.com/logo.png",
+      description: "RV-AGRIHUB Payment",
       currency: "INR",
-      key: process.env.RAZORPAY_KEY || "rzp_test_RX082JQF5LtgWu", // replace with actual key from config/env in production
-      amount: serverAmountPaise,
+      key: process.env.RAZORPAY_KEY || "rzp_test_RX082JQF5LtgWu",
+      amount: razorpayOrder.amount,
       order_id: razorpayOrder.id,
       name: "RV-AGRIHUB",
       prefill: {
@@ -301,8 +910,8 @@ export default function CheckoutScreen({ navigation }) {
 
     try {
       const paymentData = await RazorpayCheckout.open(options);
-      // paymentData: { razorpay_payment_id, razorpay_order_id, razorpay_signature }
-      // 3) Verify payment on server
+      setIsVerifyingPayment(true);
+
       const verifyRes = await axios.post(`${BASE_URL}/api/orders/verify-payment`, {
         order_id,
         razorpay_order_id: paymentData.razorpay_order_id,
@@ -310,75 +919,45 @@ export default function CheckoutScreen({ navigation }) {
         razorpay_signature: paymentData.razorpay_signature,
       });
 
-   if (verifyRes.data.success) {
-  try {
-    setIsRedirecting(true); // ✅ instantly hide checkout UI
-
-    // 🧹 Clear cart on server + locally
-    await axios.delete(`${BASE_URL}/api/cart/clear/${customer_id}`);
-    setCartItems([]);
-    clearCartCount?.();
-
-        setTimeout(() => {
-      navigation.reset({
-        index: 0,
-        routes: [
-          {
-            name: "Home",
-            state: {
-              routes: [
-                {
-                  name: "PaymentSuccess",
-                  params: {
-                    order_id,
-                    razorpay_order_id: paymentData.razorpay_order_id,
-                    amount: Number(finalAmount).toFixed(2),
+      if (verifyRes.data.success) {
+        axios.delete(`${BASE_URL}/api/cart/clear/${customer_id}`).catch(() => { });
+        clearCartCount?.();
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: "Home",
+              state: {
+                routes: [
+                  {
+                    name: "PaymentSuccess",
+                    params: { order_id, amount: Number(finalAmount).toFixed(2) },
                   },
-                },
-              ],
+                ],
+              },
             },
-          },
-        ],
-      });
-    }, 300); 
- } catch (clearErr) {
-    console.error("Error clearing cart:", clearErr.message);
-  }
+          ],
+        });
       } else {
-        Alert.alert("Verification failed", verifyRes.data.message || "Payment verification failed");
+        setIsVerifyingPayment(false);
+        Alert.alert("Verification Failed", verifyRes.data.message);
       }
-    } catch (err) {
-      // Razorpay cancelled or error
-      console.log("Payment error/cancel:", err);
-      Alert.alert("Payment Cancelled", "Payment not completed.");
+    } catch {
+      setIsVerifyingPayment(false);
+      Alert.alert("Payment Cancelled", "Transaction not completed.");
     }
   };
 
-  // Pay button label: if serverOrder exists, show server final amount; otherwise show local estimate
   const displayedPayAmount = serverOrder
     ? Number(serverOrder.finalAmount).toFixed(2)
     : Number(localGrandTotal || 0).toFixed(2);
 
-  if (loading) {
+  if (loading)
     return (
       <View style={styles.loader}>
         <ActivityIndicator size="large" color="#1a8e55" />
       </View>
     );
-  }
-
-  if (!cartItems.length) return null;
-
-    if (isRedirecting) {
-    return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#1a8e55" />
-        <Text style={{ marginTop: 10, color: "#1a8e55", fontWeight: "600" }}>
-          Redirecting to success screen...
-        </Text>
-      </View>
-    );
-  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f9f9f9" }}>
@@ -400,7 +979,6 @@ export default function CheckoutScreen({ navigation }) {
             <Text style={styles.label}>Items Total</Text>
             <Text style={styles.value}>₹{itemAmount.toFixed(2)}</Text>
           </View>
-
           <View style={styles.row}>
             <Text style={styles.label}>Product Discount</Text>
             <Text style={styles.value}>- ₹{productDiscountAmount.toFixed(2)}</Text>
@@ -408,30 +986,25 @@ export default function CheckoutScreen({ navigation }) {
 
           <View style={styles.row}>
             <Text style={styles.label}>Subtotal</Text>
-            <Text style={styles.value}>₹{subtotalAfterProductDiscount.toFixed(2)}</Text>
+            <Text style={styles.value}>₹{subtotalAfterDiscount.toFixed(2)}</Text>
           </View>
 
-          <View style={styles.row}>
-            <Text style={styles.label}>GST</Text>
-            <Text style={styles.value}>₹{gstAmount.toFixed(2)}</Text>
-          </View>
-
-
+          {/* Coupons Section */}
           <View style={{ marginTop: 10 }}>
             {appliedCoupon ? (
               <View style={styles.couponAppliedBox}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                   <Text style={{ fontWeight: "700" }}>{appliedCoupon.coupon_code}</Text>
                   <TouchableOpacity onPress={removeCoupon}>
-                    <Text style={{ color: "red" }}>Remove</Text>
+                    <Text style={{ color: "red", fontWeight: "600" }}>Remove</Text>
                   </TouchableOpacity>
                 </View>
-                <Text style={{ marginTop: 6, color: "#444" }}>
-                  {appliedCoupon.description || "Coupon applied"}
-                </Text>
+                <Text style={{ color: "#444" }}>{appliedCoupon.description || ""}</Text>
                 <View style={[styles.row, { marginTop: 8 }]}>
                   <Text style={styles.label}>Coupon Discount</Text>
-                  <Text style={[styles.value, { color: "#2E7D32" }]}>- ₹{couponDiscountAmount.toFixed(2)}</Text>
+                  <Text style={[styles.value, { color: "#2E7D32" }]}>
+                    - ₹{couponDiscountAmount.toFixed(2)}
+                  </Text>
                 </View>
               </View>
             ) : (
@@ -443,29 +1016,85 @@ export default function CheckoutScreen({ navigation }) {
                     onChangeText={setCouponCodeInput}
                     style={styles.couponInput}
                   />
-                  <TouchableOpacity onPress={() => applyCoupon(couponCodeInput)} style={styles.couponButton} disabled={isApplyingCoupon}>
-                    <Text style={{ color: "#fff", fontWeight: "700" }}>{isApplyingCoupon ? "..." : "Apply"}</Text>
+                  <TouchableOpacity
+                    onPress={() => applyCoupon(couponCodeInput)}
+                    style={styles.couponButton}
+                    disabled={isApplyingCoupon}
+                  >
+                    <Text style={{ color: "#fff", fontWeight: "700" }}>
+                      {isApplyingCoupon ? "..." : "Apply"}
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
-                {/* quick pick coupons list (if any) */}
+                {couponMessage ? (
+                  <Text
+                    style={{
+                      marginTop: 6,
+                      color: couponMessageType === "error" ? "red" : "#2E7D32",
+                      fontSize: 13,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {couponMessage}
+                  </Text>
+                ) : null}
+
                 {availableCoupons.length > 0 && (
                   <View style={{ marginTop: 10 }}>
-                    <Text style={{ fontWeight: "700", marginBottom: 6 }}>Available Coupons</Text>
-                    <FlatList
-                      data={availableCoupons}
-                      horizontal
-                      keyExtractor={(c) => String(c.id)}
-                      renderItem={({ item }) => (
-                        <TouchableOpacity
-                          style={styles.couponChip}
-                          onPress={() => applyCoupon(item.coupon_code)}
-                        >
-                          <Text style={{ fontWeight: "700" }}>{item.coupon_code}</Text>
-                          <Text style={{ fontSize: 12 }}>{item.discount_type === "percentage" ? `${item.discount_value}%` : `₹${item.discount_value}`}</Text>
-                        </TouchableOpacity>
-                      )}
-                    />
+                    <TouchableOpacity
+                      onPress={() => setShowCoupons(!showCoupons)}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        backgroundColor: "#e8f5e9",
+                        padding: 10,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Text style={{ fontWeight: "700", color: "#1a8e55" }}>
+                        {showCoupons ? "Hide Coupons" : "View Coupons"}
+                      </Text>
+                      <Ionicons
+                        name={showCoupons ? "chevron-up" : "chevron-down"}
+                        size={20}
+                        color="#1a8e55"
+                      />
+                    </TouchableOpacity>
+
+                    {showCoupons && (
+                      <FlatList
+                        data={availableCoupons}
+                        horizontal
+                        keyExtractor={(c) => String(c.id)}
+                        renderItem={({ item }) => (
+                          <TouchableOpacity
+                            style={styles.couponChip}
+                            onPress={() => applyCoupon(item.coupon_code)}
+                            activeOpacity={0.8}
+                          >
+                            <Text style={{ fontWeight: "700" }}>{item.coupon_code}</Text>
+                            <Text style={{ fontSize: 12 }}>
+                              {item.discount_type === "percentage"
+                                ? `${item.discount_value}% off`
+                                : `₹${item.discount_value} off`}
+                            </Text>
+                            <Text
+                              style={{
+                                fontSize: 11,
+                                color: "#555",
+                                textAlign: "center",
+                                marginTop: 3,
+                              }}
+                              numberOfLines={2}
+                            >
+                              {item.description || ""}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      />
+                    )}
                   </View>
                 )}
               </>
@@ -473,7 +1102,6 @@ export default function CheckoutScreen({ navigation }) {
           </View>
 
           <View style={styles.divider} />
-
           <View style={styles.row}>
             <Text style={styles.totalLabel}>Total Payable</Text>
             <Text style={styles.totalValue}>₹{displayedPayAmount}</Text>
@@ -483,67 +1111,56 @@ export default function CheckoutScreen({ navigation }) {
         {/* Items */}
         <View style={styles.itemsBox}>
           <Text style={styles.sectionTitle}>Items ({cartItems.length})</Text>
-
-          {/* {cartItems.map((item) => (
-            <View key={item.id} style={styles.itemCard}>
-              <Image source={{ uri: item.product.model_image }} style={styles.itemImage} />
-              <View style={styles.itemInfo}>
-                <Text style={styles.itemName}>{item.product.model_name}</Text>
-                <Text style={styles.itemDesc}>{item.product.segment}</Text>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-                  <Text style={styles.itemPrice}>₹{item.product.price} x {item.quantity}</Text>
-                  <Text style={{ color: "#ff4d4d" }}>{item.product.discount_percent}% OFF</Text>
-                </View>
-              </View>
-            </View>
-          ))} */}
-
           {cartItems.map((item) => (
             <View key={item.id} style={styles.cartCard}>
-              {/* Product Image */}
-              <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={() =>
-                  navigation.navigate("ProductDetailPage", { product: item.product })
-                }
-                style={styles.imageContainer}
-              >
-                <Image
-                  source={{ uri: item.product.model_image }}
-                  style={styles.image}
-                />
-              </TouchableOpacity>
-
-              {/* Product Details */}
+              <Image source={{ uri: item.product.model_image }} style={styles.image} />
               <View style={styles.details}>
-                <Text style={styles.name} numberOfLines={1}>
-                  {item.product.model_name}
-                </Text>
+                <Text style={styles.name}>{item.product.model_name}</Text>
                 <Text style={styles.segment}>{item.product.segment}</Text>
                 <Text style={styles.price}>₹ {item.product.price}</Text>
-
                 <View style={styles.qtyRow}>
                   <TouchableOpacity onPress={() => decreaseQty(item.id)}>
-                    <Ionicons name="remove-circle-outline" size={24} color="#548c5c" />
+                    <Ionicons name="remove-circle-outline" size={22} color="#548c5c" />
                   </TouchableOpacity>
                   <Text style={styles.qty}>{item.quantity}</Text>
                   <TouchableOpacity onPress={() => increaseQty(item.id)}>
-                    <Ionicons name="add-circle-outline" size={24} color="#548c5c" />
+                    <Ionicons name="add-circle-outline" size={22} color="#548c5c" />
                   </TouchableOpacity>
                 </View>
               </View>
-
-              {/* Remove Button */}
-              <View style={styles.iconColumn}>
-                <TouchableOpacity onPress={() => removeItem(item.id)}>
-                  <Ionicons name="trash-outline" size={22} color="red" />
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity onPress={() => removeItem(item.id)}>
+                <Ionicons name="trash-outline" size={22} color="red" />
+              </TouchableOpacity>
             </View>
           ))}
-
         </View>
       </ScrollView>
+
+      {/* Rich verification UI */}
+      {/* {isVerifyingPayment && (
+        <Animated.View style={styles.verifyingBox}>
+          <ActivityIndicator size="small" color="#2e7d32" />
+          <Text style={styles.verifyingText}>Verifying your payment securely...</Text>
+        </Animated.View>
+      )} */}
+
+      {isVerifyingPayment && (
+  <Animated.View style={styles.verifyingBox}>
+    <Animated.View style={styles.verifyingGlow} />
+    <View style={styles.verifyingContent}>
+      <Ionicons name="lock-closed-outline" size={22} color="#1a8e55" />
+      <ActivityIndicator
+        size="small"
+        color="#1a8e55"
+        style={{ marginHorizontal: 10 }}
+      />
+      <Text style={styles.verifyingText}>
+        Verifying your payment securely...
+      </Text>
+    </View>
+  </Animated.View>
+)}
+
 
       {/* Pay Button */}
       <TouchableOpacity style={styles.payNowButton} onPress={handlePayNow}>
@@ -553,75 +1170,159 @@ export default function CheckoutScreen({ navigation }) {
   );
 }
 
-// Styles (mostly reused)
 const styles = StyleSheet.create({
-  container: { paddingBottom: 120 },
+  container: { paddingBottom: 140 },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { flexDirection: "row", alignItems: "center", padding: 15, borderBottomWidth: 1, borderColor: "#eee", backgroundColor: "#fff" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 15,
+    borderBottomWidth: 1,
+    borderColor: "#eee",
+    backgroundColor: "#fff",
+  },
   headerTitle: { flex: 1, textAlign: "center", fontSize: 18, fontWeight: "600" },
   summaryBox: { backgroundColor: "#fff", margin: 12, borderRadius: 10, padding: 15, elevation: 3 },
+  sectionTitle: { fontWeight: "700", fontSize: 16, marginBottom: 6 },
   row: { flexDirection: "row", justifyContent: "space-between", marginVertical: 6 },
   label: { fontSize: 15, color: "#444" },
   value: { fontSize: 15, fontWeight: "500", color: "#000" },
   divider: { height: 1, backgroundColor: "#ddd", marginVertical: 8 },
   totalLabel: { fontSize: 17, fontWeight: "700", color: "#000" },
   totalValue: { fontSize: 17, fontWeight: "700", color: "#1a8e55" },
-
-  couponInput: { flex: 1, borderWidth: 1, borderColor: "#ccc", borderRadius: 8, paddingHorizontal: 10, height: 40 },
-  couponButton: { backgroundColor: "#1a8e55", paddingHorizontal: 15, paddingVertical: 10, borderRadius: 8, marginLeft: 8 },
-
-  couponAppliedBox: { padding: 10, backgroundColor: "#f1fff3", borderRadius: 8, borderWidth: 1, borderColor: "#e0f1e7", marginTop: 8 },
-
-  couponChip: { backgroundColor: "#fff", padding: 10, borderRadius: 8, marginRight: 8, borderWidth: 1, borderColor: "#eee", alignItems: "center", minWidth: 100 },
-
+  couponInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 40,
+  },
+  couponButton: {
+    backgroundColor: "#1a8e55",
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  couponAppliedBox: {
+    padding: 10,
+    backgroundColor: "#f1fff3",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e0f1e7",
+  },
+  couponChip: {
+    backgroundColor: "#fff",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 140,
+    elevation: 2,
+  },
   itemsBox: { backgroundColor: "#fff", margin: 12, borderRadius: 10, padding: 15, elevation: 3 },
-  itemCard: { flexDirection: "row", alignItems: "center", marginVertical: 8 },
-  itemImage: { width: 80, height: 80, borderRadius: 8 },
-  itemInfo: { marginLeft: 15, flex: 1 },
-  itemName: { fontSize: 15, fontWeight: "600" },
-  itemDesc: { fontSize: 13, color: "#777" },
-  itemPrice: { color: "#000", fontWeight: "700", marginTop: 4 },
-
-  payNowButton: { backgroundColor: "#1a8e55", paddingVertical: 16, alignItems: "center", position: "absolute", bottom: 0, width: "100%" },
-  payNowText: { color: "#fff", fontSize: 17, fontWeight: "700" },
-
-
-  // 🛒 Same card UI as CartScreen
   cartCard: {
     flexDirection: "row",
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 14,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-  },
-  imageContainer: {
-    width: 100,
-    height: 100,
     borderRadius: 10,
-    overflow: "hidden",
-    backgroundColor: "#fffcfcff",
+    padding: 10,
+    marginBottom: 12,
+    elevation: 3,
+    alignItems: "center",
   },
-  image: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "contain",
-  },
-  details: { flex: 1, marginLeft: 12, justifyContent: "space-between" },
-  name: { fontSize: 15, fontWeight: "600", color: "#333" },
-  segment: { fontSize: 13, color: "#777", marginVertical: 2 },
+  image: { width: 80, height: 80, borderRadius: 8 },
+  details: { flex: 1, marginLeft: 12 },
+  name: { fontSize: 15, fontWeight: "600" },
+  segment: { fontSize: 13, color: "#777" },
   price: { fontSize: 15, color: "#548c5c", fontWeight: "bold" },
   qtyRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
   qty: { marginHorizontal: 10, fontSize: 15, color: "#333" },
-  iconColumn: {
-    justifyContent: "flex-end",
+  payNowButton: {
+    backgroundColor: "#1a8e55",
+    paddingVertical: 16,
     alignItems: "center",
-    width: 40,
-    marginBottom: 20,
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    elevation: 20,
   },
+  payNowText: { color: "#fff", fontSize: 17, fontWeight: "700" },
+  // verifyingBox: {
+  //   position: "absolute",
+  //   bottom: 260,
+  //   left: 20,
+  //   right: 20,
+  //   backgroundColor: "#ffffffff",
+  //   borderRadius: 10,
+  //   paddingVertical: 12,
+  //   flexDirection: "row",
+  //   justifyContent: "center",
+  //   alignItems: "center",
+  //   shadowColor: "#1a8e55",
+  //   shadowOpacity: 0.6,
+  //   shadowRadius: 6,
+  //   elevation: 10,
+  // },
+  // verifyingText: {
+  //   color: "#2e7d32",
+  //   fontWeight: "700",
+  //   fontSize: 14,
+  //   marginLeft: 8,
+  //   justifyContent: "center",
+
+  //   textShadowColor: "#0003",
+  //   textShadowOffset: { width: 0, height: 1 },
+  //   textShadowRadius: 2,
+  // },
+
+
+  verifyingBox: {
+  position: "absolute",
+  bottom: 250,
+  left: 20,
+  right: 20,
+  backgroundColor: "rgba(255,255,255,0.95)",
+  borderRadius: 16,
+  paddingVertical: 18,
+  alignItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+  elevation: 18,
+  shadowColor: "#1a8e55",
+  shadowOpacity: 0.4,
+  shadowRadius: 10,
+},
+
+verifyingGlow: {
+  ...StyleSheet.absoluteFillObject,
+  borderRadius: 16,
+  backgroundColor: "rgba(26,142,85,0.15)",
+  shadowColor: "#1a8e55",
+  shadowOpacity: 0.7,
+  shadowRadius: 25,
+  elevation: 8,
+  zIndex: -1,
+  opacity: 0.9,
+},
+
+verifyingContent: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+verifyingText: {
+  color: "#1a8e55",
+  fontWeight: "700",
+  fontSize: 15,
+  textAlign: "center",
+  textShadowColor: "rgba(0,0,0,0.2)",
+  textShadowOffset: { width: 0, height: 1 },
+  textShadowRadius: 2,
+},
 
 });
