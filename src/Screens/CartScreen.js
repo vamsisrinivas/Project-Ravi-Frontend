@@ -347,6 +347,7 @@ export default function CartScreen({ navigation }) {
   // const { wishlist, addToWishlist, removeFromWishlist } = useContext(WishlistContext);
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pendingIds, setPendingIds] = useState([]); // <--- track pending updates
   const isFocused = useIsFocused(); // ✅ track if screen is visible
 
   // 🔁 Fetch cart every time the screen is focused
@@ -356,7 +357,94 @@ export default function CartScreen({ navigation }) {
     }
   }, [isFocused]);
 
-  // ✅ Fetch Cart Items
+  //   // helper to add/remove pending id
+  // const setPending = (id, val) => {
+  //   setPendingIds((prev) => {
+  //     if (val) {
+  //       if (prev.includes(id)) return prev;
+  //       return [...prev, id];
+  //     } else {
+  //       return prev.filter((x) => x !== id);
+  //     }
+  //   });
+  // };
+
+  //   // ✅ Fetch Cart Items
+  //   const fetchCart = async () => {
+  //     try {
+  //       setLoading(true);
+  //       const res = await axios.get(`${BASE_URL}/api/cart/${user.customer_id}`);
+  //       if (res.data.success) setCartItems(res.data.data);
+  //     } catch (error) {
+  //       console.error("Error fetching cart:", error.message);
+  //       Alert.alert("❌ Failed to load cart");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  // // ✅ Increase Quantity
+  // const increaseQty = async (id) => {
+
+  //   try {
+  //     setCartItems((prev) =>
+  //       prev.map((item) =>
+  //         item.id === id ? { ...item, quantity: item.quantity + 1 } : item
+  //       )
+  //     );
+  //     await axios.put(`${BASE_URL}/api/cart/increment/${id}`);
+  //   } catch (err) {
+  //     console.error("Error incrementing quantity:", err.message);
+  //     fetchCart();
+  //   }
+  // };
+
+  // // ✅ Decrease Quantity
+  // const decreaseQty = async (id) => {
+  //   try {
+  //     setCartItems((prev) =>
+  //       prev.map((item) =>
+  //         item.id === id && item.quantity > 1
+  //           ? { ...item, quantity: item.quantity - 1 }
+  //           : item
+  //       )
+  //     );
+  //     await axios.put(`${BASE_URL}/api/cart/decrement/${id}`);
+  //   } catch (err) {
+  //     console.error("Error decrementing quantity:", err.message);
+  //     fetchCart();
+  //   }
+  // };
+
+  // // ✅ Remove Item from Cart
+  // const removeItem = async (id) => {
+  //   try {
+  //     setCartItems((prev) => prev.filter((item) => item.id !== id));
+  //     await axios.delete(`${BASE_URL}/api/cart/delete/${id}`);
+  //     Alert.alert("🗑️ Removed from cart!");
+  //   } catch (err) {
+  //     console.error("Error removing item:", err.message);
+  //   }
+  // };
+
+
+
+
+
+
+  // helper to add/remove pending id
+  const setPending = (id, val) => {
+    setPendingIds((prev) => {
+      if (val) {
+        if (prev.includes(id)) return prev;
+        return [...prev, id];
+      } else {
+        return prev.filter((x) => x !== id);
+      }
+    });
+  };
+
+  // fetchCart unchanged (kept for completeness)
   const fetchCart = async () => {
     try {
       setLoading(true);
@@ -370,48 +458,99 @@ export default function CartScreen({ navigation }) {
     }
   };
 
-  // ✅ Increase Quantity
+  // Increase Quantity (with pending guard)
   const increaseQty = async (id) => {
+    if (pendingIds.includes(id)) return; // already updating
+    setPending(id, true);
+
+    // optimistic UI update
+    setCartItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, quantity: item.quantity + 1 } : item))
+    );
+
     try {
-      setCartItems((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-        )
-      );
       await axios.put(`${BASE_URL}/api/cart/increment/${id}`);
+      // optionally: we could re-fetch single item or rely on success; we'll keep optimistic UI
     } catch (err) {
       console.error("Error incrementing quantity:", err.message);
-      fetchCart();
+      // revert by refetching server state
+      await fetchCart();
+    } finally {
+      setPending(id, false);
     }
   };
 
-  // ✅ Decrease Quantity
+  // Decrease Quantity (with pending guard)
   const decreaseQty = async (id) => {
+    if (pendingIds.includes(id)) return;
+    setPending(id, true);
+
+    // optimistic UI update but guard not to drop below 1
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.id === id && item.quantity > 1 ? { ...item, quantity: item.quantity - 1 } : item
+      )
+    );
+
     try {
-      setCartItems((prev) =>
-        prev.map((item) =>
-          item.id === id && item.quantity > 1
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
-        )
-      );
       await axios.put(`${BASE_URL}/api/cart/decrement/${id}`);
     } catch (err) {
       console.error("Error decrementing quantity:", err.message);
-      fetchCart();
+      await fetchCart();
+    } finally {
+      setPending(id, false);
     }
   };
 
-  // ✅ Remove Item from Cart
+  // Remove Item similar: prevent double tap
   const removeItem = async (id) => {
+    if (pendingIds.includes(id)) return;
+    setPending(id, true);
+    // optimistic removal:
+    setCartItems((prev) => prev.filter((item) => item.id !== id));
     try {
-      setCartItems((prev) => prev.filter((item) => item.id !== id));
       await axios.delete(`${BASE_URL}/api/cart/delete/${id}`);
       Alert.alert("🗑️ Removed from cart!");
     } catch (err) {
       console.error("Error removing item:", err.message);
+      await fetchCart();
+    } finally {
+      setPending(id, false);
     }
   };
+
+  // New: ensure Checkout uses server-confirmed cart
+  const handleProceedToCheckout = async () => {
+    try {
+      setLoading(true);
+      await fetchCart(); // refresh from server (wait for it)
+      // compute totals again from the up-to-date cartItems
+      const itemAmount = cartItems.reduce(
+        (sum, item) => sum + parseFloat(item.product.price) * item.quantity,
+        0
+      );
+      const discount = cartItems.reduce(
+        (sum, item) =>
+          sum +
+          (parseFloat(item.product.price) * item.quantity * parseFloat(item.product.discount_percent)) /
+          100,
+        0
+      );
+      const totalAmount = itemAmount - discount;
+
+      navigation.navigate("Checkout", {
+        itemAmount,
+        discount,
+        totalAmount,
+      });
+    } catch (err) {
+      console.error("Error preparing checkout:", err.message);
+      Alert.alert("❌ Could not prepare checkout. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
 
   // ✅ Totals
@@ -459,12 +598,12 @@ export default function CartScreen({ navigation }) {
           <Text style={styles.price}>₹ {item.product.price}</Text>
 
           <View style={styles.qtyRow}>
-            <TouchableOpacity onPress={() => decreaseQty(item.id)}>
-              <Ionicons name="remove-circle-outline" size={24} color="#548c5c" />
+            <TouchableOpacity onPress={() => decreaseQty(item.id)} disabled={pendingIds.includes(item.id)} >
+              <Ionicons name="remove-circle-outline" size={24} color={pendingIds.includes(item.id) ? "#ccc" : "#548c5c"} />
             </TouchableOpacity>
             <Text style={styles.qty}>{item.quantity}</Text>
-            <TouchableOpacity onPress={() => increaseQty(item.id)}>
-              <Ionicons name="add-circle-outline" size={24} color="#548c5c" />
+            <TouchableOpacity onPress={() => increaseQty(item.id)} disabled={pendingIds.includes(item.id)}>
+              <Ionicons name="add-circle-outline" size={24} color={pendingIds.includes(item.id) ? "#ccc" : "#548c5c"} />
             </TouchableOpacity>
           </View>
         </View>
@@ -495,9 +634,9 @@ export default function CartScreen({ navigation }) {
         {/* <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity> */}
-         <View style={{ width: 45, alignItems: 'flex-start' }}>
-                  <GoHomeButton />
-                </View>
+        <View style={{ width: 45, alignItems: 'flex-start' }}>
+          <GoHomeButton />
+        </View>
         <Text style={styles.headerTitle}>My Cart</Text>
         <View style={{ width: 24 }} />
       </View>
@@ -531,7 +670,7 @@ export default function CartScreen({ navigation }) {
             <Text style={styles.totalLabel}>Total Amount</Text>
             <Text style={styles.totalValue}>₹{totalAmount.toFixed(2)}</Text>
           </View>
-
+          {/* 
           <TouchableOpacity
             style={styles.checkoutButton}
             onPress={() => navigation.navigate("Checkout", {
@@ -543,7 +682,12 @@ export default function CartScreen({ navigation }) {
             }
           >
             <Text style={styles.checkoutText}>Proceed to Checkout</Text>
+          </TouchableOpacity> */}
+
+          <TouchableOpacity style={styles.checkoutButton} onPress={handleProceedToCheckout}>
+            <Text style={styles.checkoutText}>Proceed to Checkout</Text>
           </TouchableOpacity>
+
         </View>
       )}
     </SafeAreaView>

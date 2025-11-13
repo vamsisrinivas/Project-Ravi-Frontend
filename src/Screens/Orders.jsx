@@ -181,74 +181,39 @@ const Orders = () => {
   };
 
 
-  // Enable LayoutAnimation on Android
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+//   // Enable LayoutAnimation on Android
+// if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental && !global._IS_FABRIC_ENABLED) {
+//   UIManager.setLayoutAnimationEnabledExperimental(true);
+// }
+
+// const toggleExpand = (orderId) => {
+//  if (Platform.OS === "android" && !global._IS_FABRIC_ENABLED) {
+//     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+//   }
+//   setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
+// };
+
+// Detect New Architecture (Fabric)
+const isFabric = !!global?.nativeFabricUIManager;
+
+// Enable LayoutAnimation on Android only (Old Architecture)
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental &&
+  !isFabric
+) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 const toggleExpand = (orderId) => {
-  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  if (Platform.OS === "android" && !isFabric) {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  }
   setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
 };
 
-  // const renderItem = ({ item }) => (
-  //   <View style={styles.orderCard}>
-  //     <View style={styles.orderHeader}>
-  //       <Text style={styles.orderId}>Order ID: {item.order_id}</Text>
-  //       <Text
-  //         style={[
-  //           styles.status,
-  //           statusStyles[item.status?.toLowerCase()] || statusStyles.OrderPlaced,
-  //           { color: statusStyles[item.status?.toLowerCase()]?.color || "#C62828" },
-  //         ]}
-  //       >
-  //         {item.status.toUpperCase()}
-  //       </Text>
-  //     </View>
-
-  //     {item.items?.map((it) => (
-  //       <View key={`${item.order_id}-${it.id}`} style={styles.itemRow}>
-  //         {/* <TouchableOpacity
-  //           onPress={() =>
-  //             navigation.navigate("Home", {
-  //               screen: "ProductDetailPage",
-  //               params: { product: it.product },
-  //             })
-  //           }
-  //           activeOpacity={0.9}
-  //         >
-  //           <Image
-  //             source={{ uri: it.product?.model_image || "https://via.placeholder.com/80" }}
-  //             style={styles.image}
-  //           />
-  //         </TouchableOpacity> */}
-
-  //         <View style={{ flex: 1 }}>
-  //           <Text style={styles.productName}>{it.product?.model_name || "Model Item"}</Text>
-  //           <Text style={styles.price}>₹ {it.price} × {it.quantity}</Text>
-  //         </View>
-  //       </View>
-  //     ))}
-
-  //     <OrderStatusBar deliverystatus={item.deliverystatus} />
-
-  //     <View style={styles.footer}>
-  //       <Text style={styles.amount}>Total: ₹{item.order_total}</Text>
-  //       <TouchableOpacity style={styles.detailsButton} onPress={() =>
-  //         navigation.navigate("Home", {
-  //           screen: "OrderDetails",
-  //           params: { order_id: item.order_id },
-  //         })}>
-  //         <Ionicons name="receipt-outline" size={18} color="#fff" />
-  //         <Text style={styles.detailsText}>View Details</Text>
-  //       </TouchableOpacity>
-  //     </View>
-  //   </View>
-  // );
 
 
-
-  
   const renderItem = ({ item }) => {
  const isExpanded = expandedOrderId === item.order_id;
 

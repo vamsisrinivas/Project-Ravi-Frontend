@@ -719,6 +719,7 @@ export default function CheckoutScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [serverOrder, setServerOrder] = useState(null);
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [isPaying, setIsPaying] = useState(false); // 🚀 add this near other state vars
 
   // Coupons
   const [availableCoupons, setAvailableCoupons] = useState([]);
@@ -886,11 +887,18 @@ export default function CheckoutScreen({ navigation }) {
 
   // 💳 Payment
   const handlePayNow = async () => {
-    if (!cartItems.length) return Alert.alert("Cart Empty", "Add items first.");
-    if (!address) return Alert.alert("No Address", "Please select a shipping address.");
+
+    if (isPaying) return; // 🚫 prevent double click
+    setIsPaying(true);
+
+    if (!cartItems.length) { setIsPaying(false); Alert.alert("Cart Empty", "Add items first."); return }
+    if (!address) { Alert.alert("No Address", "Please select a shipping address."); setIsPaying(false); return; }
 
     const created = await createServerOrder();
-    if (!created) return;
+    if (!created) {
+      setIsPaying(false);
+      return;
+    };
 
     const { order_id, razorpayOrder, finalAmount } = created;
     const options = {
@@ -931,7 +939,12 @@ export default function CheckoutScreen({ navigation }) {
                 routes: [
                   {
                     name: "PaymentSuccess",
-                    params: { order_id, amount: Number(finalAmount).toFixed(2) },
+                    params: {
+                      order_id,
+                      razorpay_order_id: paymentData.razorpay_order_id,
+                      razorpay_payment_id: paymentData.razorpay_payment_id,
+                      amount: Number(finalAmount).toFixed(2)
+                    },
                   },
                 ],
               },
@@ -945,12 +958,20 @@ export default function CheckoutScreen({ navigation }) {
     } catch {
       setIsVerifyingPayment(false);
       Alert.alert("Payment Cancelled", "Transaction not completed.");
+    } finally {
+      // ✅ Always unlock after process ends
+      setIsPaying(false);
     }
   };
 
-  const displayedPayAmount = serverOrder
-    ? Number(serverOrder.finalAmount).toFixed(2)
-    : Number(localGrandTotal || 0).toFixed(2);
+  // const displayedPayAmount = serverOrder
+  //   ? Number(serverOrder.finalAmount).toFixed(2)
+  //   : Number(localGrandTotal || 0).toFixed(2);
+  const displayedPayAmount = useMemo(
+    () => Number(serverOrder?.finalAmount || localGrandTotal || 0).toFixed(2),
+    [serverOrder, localGrandTotal]
+  );
+
 
   if (loading)
     return (
@@ -1051,6 +1072,7 @@ export default function CheckoutScreen({ navigation }) {
                         backgroundColor: "#e8f5e9",
                         padding: 10,
                         borderRadius: 8,
+                        marginBottom:5
                       }}
                     >
                       <Text style={{ fontWeight: "700", color: "#1a8e55" }}>
@@ -1063,7 +1085,7 @@ export default function CheckoutScreen({ navigation }) {
                       />
                     </TouchableOpacity>
 
-                    {showCoupons && (
+                    {/* {showCoupons && (
                       <FlatList
                         data={availableCoupons}
                         horizontal
@@ -1094,7 +1116,55 @@ export default function CheckoutScreen({ navigation }) {
                           </TouchableOpacity>
                         )}
                       />
+                    )} */}
+
+                    {showCoupons && (
+                      <FlatList
+                        data={availableCoupons}
+                        horizontal
+                        keyExtractor={(c) => String(c.id)}
+                        renderItem={({ item }) => (
+                          <TouchableOpacity
+                            style={styles.couponChip}
+                            onPress={() => applyCoupon(item.coupon_code)}
+                            activeOpacity={0.8}
+                          >
+                            {/* Coupon Code */}
+                            <Text style={{ fontWeight: "700", fontSize: 14, color: "#1a8e55" }}>
+                              {item.coupon_code}
+                            </Text>
+
+                            {/* Description */}
+                            <Text
+                              style={{
+                                fontSize: 13,
+                                color: "#000000ff",
+                                marginTop: 2,
+                                textAlign: "center",
+                                fontWeight: "400",
+                              }}
+                              numberOfLines={1}
+                            >
+                              {item.description || "No description"}
+                            </Text>
+
+                            {/* Minimum Order Amount */}
+                            <Text
+                              style={{
+                                fontSize: 12,
+                                color: "#000000ff",
+                                marginTop: 4,
+                                textAlign: "center",
+                                fontWeight: "400",
+                              }}
+                            >
+                              Min Order: ₹{item.min_order_amount}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      />
                     )}
+
                   </View>
                 )}
               </>
@@ -1145,26 +1215,34 @@ export default function CheckoutScreen({ navigation }) {
       )} */}
 
       {isVerifyingPayment && (
-  <Animated.View style={styles.verifyingBox}>
-    <Animated.View style={styles.verifyingGlow} />
-    <View style={styles.verifyingContent}>
-      <Ionicons name="lock-closed-outline" size={22} color="#1a8e55" />
-      <ActivityIndicator
-        size="small"
-        color="#1a8e55"
-        style={{ marginHorizontal: 10 }}
-      />
-      <Text style={styles.verifyingText}>
-        Verifying your payment securely...
-      </Text>
-    </View>
-  </Animated.View>
-)}
+        <Animated.View style={styles.verifyingBox}>
+          <Animated.View style={styles.verifyingGlow} />
+          <View style={styles.verifyingContent}>
+            <Ionicons name="lock-closed-outline" size={22} color="#1a8e55" />
+            <ActivityIndicator
+              size="small"
+              color="#1a8e55"
+              style={{ marginHorizontal: 10 }}
+            />
+            <Text style={styles.verifyingText}>
+              Verifying your payment securely...
+            </Text>
+          </View>
+        </Animated.View>
+      )}
 
 
       {/* Pay Button */}
-      <TouchableOpacity style={styles.payNowButton} onPress={handlePayNow}>
-        <Text style={styles.payNowText}>Pay ₹{displayedPayAmount}</Text>
+      <TouchableOpacity s style={[styles.payNowButton, isPaying && { backgroundColor: "#a5d6a7" }]} onPress={handlePayNow} disabled={isPaying} // 🚫 disable multiple taps
+        activeOpacity={isPaying ? 1 : 0.7}>
+        {isPaying ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <ActivityIndicator color="#fff" size="small" />
+            <Text style={styles.payNowText}>Processing...</Text>
+          </View>
+        ) : (
+          <Text style={styles.payNowText}>Pay ₹{displayedPayAmount}</Text>
+        )}
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -1281,48 +1359,48 @@ const styles = StyleSheet.create({
 
 
   verifyingBox: {
-  position: "absolute",
-  bottom: 250,
-  left: 20,
-  right: 20,
-  backgroundColor: "rgba(255,255,255,0.95)",
-  borderRadius: 16,
-  paddingVertical: 18,
-  alignItems: "center",
-  justifyContent: "center",
-  overflow: "hidden",
-  elevation: 18,
-  shadowColor: "#1a8e55",
-  shadowOpacity: 0.4,
-  shadowRadius: 10,
-},
+    position: "absolute",
+    bottom: 250,
+    left: 20,
+    right: 20,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: 16,
+    paddingVertical: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    elevation: 18,
+    shadowColor: "#1a8e55",
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+  },
 
-verifyingGlow: {
-  ...StyleSheet.absoluteFillObject,
-  borderRadius: 16,
-  backgroundColor: "rgba(26,142,85,0.15)",
-  shadowColor: "#1a8e55",
-  shadowOpacity: 0.7,
-  shadowRadius: 25,
-  elevation: 8,
-  zIndex: -1,
-  opacity: 0.9,
-},
+  verifyingGlow: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 16,
+    backgroundColor: "rgba(26,142,85,0.15)",
+    shadowColor: "#1a8e55",
+    shadowOpacity: 0.7,
+    shadowRadius: 25,
+    elevation: 8,
+    zIndex: -1,
+    opacity: 0.9,
+  },
 
-verifyingContent: {
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "center",
-},
+  verifyingContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
-verifyingText: {
-  color: "#1a8e55",
-  fontWeight: "700",
-  fontSize: 15,
-  textAlign: "center",
-  textShadowColor: "rgba(0,0,0,0.2)",
-  textShadowOffset: { width: 0, height: 1 },
-  textShadowRadius: 2,
-},
+  verifyingText: {
+    color: "#1a8e55",
+    fontWeight: "700",
+    fontSize: 15,
+    textAlign: "center",
+    textShadowColor: "rgba(0,0,0,0.2)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
 
 });
