@@ -226,6 +226,180 @@
 
 
 
+// import React, { useState, useRef, useContext } from "react";
+// import {
+//   View,
+//   Text,
+//   Image,
+//   TouchableOpacity,
+//   StyleSheet,
+//   ScrollView,
+//   FlatList,
+//   Dimensions,
+// } from "react-native";
+// import Ionicons from "react-native-vector-icons/Ionicons";
+// import Toast from "react-native-toast-message"; // ✅ import Toast
+// import fallbackImage from "../assets/Not-Avaliable.jpeg";
+// import { AuthContext } from "../Context/AuthContext";
+// import useAddToCart from "../Components/AddToCartFun";
+// import GoHomeButton from "../Components/GoHomeButton";
+// import { showToast } from "../Components/CustomToast";
+
+// const { width } = Dimensions.get("window");
+
+// export default function ProductDetailPage({ route, navigation }) {
+//   const { product } = route.params;
+//   const [quantity, setQuantity] = useState(1);
+//   const [activeIndex, setActiveIndex] = useState(0);
+//   const flatListRef = useRef(null);
+
+//   const { user } = useContext(AuthContext);
+//   const customer_id = user?.customer_id;
+
+//   const { addToCart, loading: cartLoading } = useAddToCart(customer_id);
+
+//   const images = [
+//     product.model_image ? { uri: product.model_image } : fallbackImage,
+//     product.image1 ? { uri: product.image1 } : fallbackImage,
+//   ];
+
+//   const increaseQty = () => setQuantity((prev) => prev + 1);
+//   const decreaseQty = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+
+//   const handleScroll = (event) => {
+//     const slide = Math.round(event.nativeEvent.contentOffset.x / width);
+//     setActiveIndex(slide);
+//   };
+
+//   // ✅ handle Add to Cart with Toast
+//   const handleAddToCart = async () => {
+//     await addToCart(product, quantity);
+ 
+//     showToast("success", "Success!", "Add to Cart successfully!");
+    
+//   };
+
+//    const handleBuyNow = async (product) => {
+//   try {
+//     // Step 1: Add to cart (reuse your hook)
+//     await addToCart(product, 1);
+//     showToast("success", "Success!", "Add to Cart successfully!");
+
+//     // Step 2: Navigate to Checkout
+//    navigation.navigate("Home", { screen: "CartScreen" });
+//   } catch (error) {
+//     console.error("Buy Now error:", error);
+//     // Toast.show({
+//     //   type: "error",
+//     //   text1: "Failed to Buy Now",
+//     //   text2: "Please try again later",
+//     // });
+
+//     showToast("error", "Failed to Buy Now", "Please try again later!");
+//   }
+// };
+//   return (
+//     <View style={styles.container}>
+//       {/* Header */}
+//       <View style={styles.headerRow}>
+//         <View style={{ width: 45, alignItems: "flex-start" }}>
+//           <GoHomeButton />
+//         </View>
+//         <Text style={styles.headerText}>{product.model_name}</Text>
+//         <View style={{ width: 45 }} />
+//       </View>
+
+//       {/* Content */}
+//       <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
+//         {/* Image Slider */}
+//         <FlatList
+//           ref={flatListRef}
+//           data={images}
+//           keyExtractor={(_, index) => index.toString()}
+//           horizontal
+//           pagingEnabled
+//           showsHorizontalScrollIndicator={false}
+//           onScroll={handleScroll}
+//           renderItem={({ item }) => (
+//             <Image source={item} style={styles.image} resizeMode="contain" />
+//           )}
+//         />
+
+//         {/* Dots */}
+//         <View style={styles.dotsRow}>
+//           {images.map((_, index) => (
+//             <View
+//               key={index}
+//               style={[styles.dot, { opacity: activeIndex === index ? 1 : 0.3 }]}
+//             />
+//           ))}
+//         </View>
+
+//         {/* Title & Price */}
+//         <Text style={styles.title}>{product.model_name}</Text>
+//         <Text style={styles.price}>₹ {product.price}</Text>
+
+//         {/* Description */}
+//         <Text style={styles.sectionTitle}>Description</Text>
+//         <Text style={styles.description}>{product.description}</Text>
+
+//         {/* Extra Details */}
+//         <Text style={styles.sectionTitle}>Product Details</Text>
+//         <View style={styles.detailsBox}>
+//           <Text style={styles.detail}>
+//             <Text style={styles.bold}>Segment:</Text> {product.segment}
+//           </Text>
+//           <Text style={styles.detail}>
+//             <Text style={styles.bold}>Plant:</Text> {product.plant}
+//           </Text>
+//           <Text style={styles.detail}>
+//             <Text style={styles.bold}>Weight:</Text> {product.weight}
+//           </Text>
+//           <Text style={styles.detail}>
+//             <Text style={styles.bold}>Maturity:</Text> {product.maturity}
+//           </Text>
+//         </View>
+
+//         {/* Quantity */}
+//         <View style={styles.qtyRow}>
+//           <TouchableOpacity style={styles.qtyBtn} onPress={decreaseQty}>
+//             <Ionicons name="remove" size={20} color="#fff" />
+//           </TouchableOpacity>
+//           <Text style={styles.qtyText}>{quantity}</Text>
+//           <TouchableOpacity style={styles.qtyBtn} onPress={increaseQty}>
+//             <Ionicons name="add" size={20} color="#fff" />
+//           </TouchableOpacity>
+//         </View>
+
+//         {/* Buttons (moved inside ScrollView) */}
+//         <View style={styles.footer}>
+//           <TouchableOpacity
+//             style={[styles.cartBtn, cartLoading && { opacity: 0.6 }]}
+//             onPress={handleAddToCart}
+//             disabled={cartLoading}
+//           >
+//             <Ionicons name="cart" size={20} color="#fff" />
+//             <Text style={styles.cartBtnText}>
+//               {cartLoading ? "Adding..." : "Add to Cart"}
+//             </Text>
+//           </TouchableOpacity>
+
+//           <TouchableOpacity
+//             style={styles.buyBtn}
+//          onPress={() => handleBuyNow(product)}
+//           >
+//             <Ionicons name="flash" size={20} color="#fff" />
+//             <Text style={styles.buyBtnText}>Buy Now</Text>
+//           </TouchableOpacity>
+//         </View>
+
+//       </ScrollView>
+
+//     </View>
+//   );
+// }
+
+
 import React, { useState, useRef, useContext } from "react";
 import {
   View,
@@ -238,7 +412,6 @@ import {
   Dimensions,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import Toast from "react-native-toast-message"; // ✅ import Toast
 import fallbackImage from "../assets/Not-Avaliable.jpeg";
 import { AuthContext } from "../Context/AuthContext";
 import useAddToCart from "../Components/AddToCartFun";
@@ -249,6 +422,7 @@ const { width } = Dimensions.get("window");
 
 export default function ProductDetailPage({ route, navigation }) {
   const { product } = route.params;
+
   const [quantity, setQuantity] = useState(1);
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef(null);
@@ -258,59 +432,57 @@ export default function ProductDetailPage({ route, navigation }) {
 
   const { addToCart, loading: cartLoading } = useAddToCart(customer_id);
 
+  // ✅ STOCK LOGIC
+  const availableStock = Number(product.available_stock ?? 0);
+  const isOutOfStock = availableStock <= 0;
+
   const images = [
     product.model_image ? { uri: product.model_image } : fallbackImage,
     product.image1 ? { uri: product.image1 } : fallbackImage,
   ];
 
-  const increaseQty = () => setQuantity((prev) => prev + 1);
-  const decreaseQty = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+  const increaseQty = () => {
+    if (isOutOfStock) return;
+
+    if (quantity < availableStock) {
+      setQuantity((prev) => prev + 1);
+    } else {
+      showToast("info", "Stock limit reached", "No more stock available");
+    }
+  };
+
+  const decreaseQty = () => {
+    if (isOutOfStock) return;
+    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+  };
 
   const handleScroll = (event) => {
     const slide = Math.round(event.nativeEvent.contentOffset.x / width);
     setActiveIndex(slide);
   };
 
-  // ✅ handle Add to Cart with Toast
   const handleAddToCart = async () => {
     await addToCart(product, quantity);
- 
-    showToast("success", "Success!", "Add to Cart successfully!");
-    
+    showToast("success", "Success!", "Added to cart successfully!");
   };
 
-   const handleBuyNow = async (product) => {
-  try {
-    // Step 1: Add to cart (reuse your hook)
+  const handleBuyNow = async () => {
     await addToCart(product, 1);
-    showToast("success", "Success!", "Add to Cart successfully!");
+    navigation.navigate("Home", { screen: "CartScreen" });
+  };
 
-    // Step 2: Navigate to Checkout
-   navigation.navigate("Home", { screen: "CartScreen" });
-  } catch (error) {
-    console.error("Buy Now error:", error);
-    // Toast.show({
-    //   type: "error",
-    //   text1: "Failed to Buy Now",
-    //   text2: "Please try again later",
-    // });
-
-    showToast("error", "Failed to Buy Now", "Please try again later!");
-  }
-};
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.headerRow}>
-        <View style={{ width: 45, alignItems: "flex-start" }}>
+        <View style={{ width: 45 }}>
           <GoHomeButton />
         </View>
         <Text style={styles.headerText}>{product.model_name}</Text>
         <View style={{ width: 45 }} />
       </View>
 
-      {/* Content */}
-      <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Image Slider */}
         <FlatList
           ref={flatListRef}
@@ -330,7 +502,10 @@ export default function ProductDetailPage({ route, navigation }) {
           {images.map((_, index) => (
             <View
               key={index}
-              style={[styles.dot, { opacity: activeIndex === index ? 1 : 0.3 }]}
+              style={[
+                styles.dot,
+                { opacity: activeIndex === index ? 1 : 0.3 },
+              ]}
             />
           ))}
         </View>
@@ -339,11 +514,15 @@ export default function ProductDetailPage({ route, navigation }) {
         <Text style={styles.title}>{product.model_name}</Text>
         <Text style={styles.price}>₹ {product.price}</Text>
 
+        {/* {isOutOfStock && (
+          <Text style={styles.outOfStockText}>Out of Stock</Text>
+        )} */}
+
         {/* Description */}
         <Text style={styles.sectionTitle}>Description</Text>
         <Text style={styles.description}>{product.description}</Text>
 
-        {/* Extra Details */}
+        {/* Product Details */}
         <Text style={styles.sectionTitle}>Product Details</Text>
         <View style={styles.detailsBox}>
           <Text style={styles.detail}>
@@ -362,52 +541,56 @@ export default function ProductDetailPage({ route, navigation }) {
 
         {/* Quantity */}
         <View style={styles.qtyRow}>
-          <TouchableOpacity style={styles.qtyBtn} onPress={decreaseQty}>
+          <TouchableOpacity
+            style={[styles.qtyBtn, isOutOfStock && styles.disabledBtn]}
+            onPress={decreaseQty}
+            disabled={isOutOfStock}
+          >
             <Ionicons name="remove" size={20} color="#fff" />
           </TouchableOpacity>
+
           <Text style={styles.qtyText}>{quantity}</Text>
-          <TouchableOpacity style={styles.qtyBtn} onPress={increaseQty}>
+
+          <TouchableOpacity
+            style={[styles.qtyBtn, isOutOfStock && styles.disabledBtn]}
+            onPress={increaseQty}
+            disabled={isOutOfStock}
+          >
             <Ionicons name="add" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 
-        {/* Buttons (moved inside ScrollView) */}
+        {/* ACTION BUTTONS */}
         <View style={styles.footer}>
-          <TouchableOpacity
-            style={[styles.cartBtn, cartLoading && { opacity: 0.6 }]}
-            onPress={handleAddToCart}
-            disabled={cartLoading}
-          >
-            <Ionicons name="cart" size={20} color="#fff" />
-            <Text style={styles.cartBtnText}>
-              {cartLoading ? "Adding..." : "Add to Cart"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.buyBtn}
-         onPress={() => handleBuyNow(product)}
-          >
-            <Ionicons name="flash" size={20} color="#fff" />
-            <Text style={styles.buyBtnText}>Buy Now</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* 🔥 Similar Items Section
-        <Text style={styles.sectionTitle}>Similar Items</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {[1, 2, 3].map((id) => (
-            <View key={id} style={styles.similarCard}>
-              <Image
-                source={{ uri: product.model_image }}
-                style={styles.similarImage}
-              />
-              <Text style={styles.similarText}>Similar Item {id}</Text>
+          {isOutOfStock ? (
+            <View style={styles.outOfStockBtn}>
+              {/* <Ionicons name="close-circle" size={20} color="#fff" /> */}
+              <Text style={styles.outOfStockBtnText}>Out of Stock</Text>
             </View>
-          ))}
-        </ScrollView> */}
-      </ScrollView>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={[
+                  styles.cartBtn,
+                  cartLoading && { opacity: 0.6 },
+                ]}
+                onPress={handleAddToCart}
+                disabled={cartLoading}
+              >
+                <Ionicons name="cart" size={20} color="#fff" />
+                <Text style={styles.cartBtnText}>
+                  {cartLoading ? "Adding..." : "Add to Cart"}
+                </Text>
+              </TouchableOpacity>
 
+              <TouchableOpacity style={styles.buyBtn} onPress={handleBuyNow}>
+                <Ionicons name="flash" size={20} color="#fff" />
+                <Text style={styles.buyBtnText}>Buy Now</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -487,4 +670,25 @@ const styles = StyleSheet.create({
   },
   similarImage: { width: 100, height: 100, borderRadius: 8 },
   similarText: { fontSize: 12, marginTop: 5, textAlign: "center" },
+
+outOfStockBtn: {
+  backgroundColor: "#b00020",
+  padding: 16,
+  borderRadius: 12,
+  flexDirection: "row",
+  justifyContent: "center",
+  alignItems: "center",
+margin:20,
+  // ✅ CENTER IT
+  alignSelf: "center",
+  width: "90%",
+},
+
+
+  outOfStockBtnText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    // marginLeft: 8,
+  },
 });

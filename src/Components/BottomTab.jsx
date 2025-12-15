@@ -26,6 +26,9 @@ import WishlistScreen from '../Screens/WishlistScreen';
 import CheckoutScreen from '../Screens/CheckoutScreen';
 import PaymentSuccessScreen from "../Screens/PaymentSuccessScreen";
 import OrderDetailsScreen from '../Screens/OrderDetailsScreen';
+import ForgotPassword from '../Screens/ForgotPassword';
+import ProfileScreen from '../Screens/ProfileScreen';
+import ContactUs from '../Screens/ContactUs';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -43,8 +46,14 @@ function HomeStackScreen() {
       <HomeStack.Screen name="ProductDetailPage" component={ProductDetailPage} />
       <HomeStack.Screen name="CartScreen" component={CartScreen} />
       <HomeStack.Screen name="Checkout" component={CheckoutScreen} />
-      <HomeStack.Screen name="PaymentSuccess" component={PaymentSuccessScreen}  options={{ headerShown: false }}/>
-            <HomeStack.Screen name="OrderDetails" component={OrderDetailsScreen}  options={{ headerShown: false }}/>
+      <HomeStack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} options={{ headerShown: false }} />
+      <HomeStack.Screen name="OrderDetails" component={OrderDetailsScreen} options={{ headerShown: false }} />
+      <HomeStack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false }}/>
+            <HomeStack.Screen name="MyProfile" component={ProfileScreen} options={{ headerShown: false }}/>
+                        <HomeStack.Screen name="ContactUs" component={ContactUs} options={{ headerShown: false }}/>
+
+
+
 
     </HomeStack.Navigator>
   );
@@ -70,6 +79,8 @@ function ProfileStackScreen() {
       <ProfileStack.Screen name="ProfileMain" component={Profile} />
       <ProfileStack.Screen name="DeliveryAddress" component={AddressScreen} />
       <ProfileStack.Screen name="Wishlist" component={WishlistScreen} />
+      <ProfileStack.Screen name="MyProfile" component={ProfileScreen} />
+       <ProfileStack.Screen name="ContactUs" component={ContactUs} />
 
     </ProfileStack.Navigator>
   );

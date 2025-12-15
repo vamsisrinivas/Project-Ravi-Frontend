@@ -36,14 +36,14 @@ const Login = ({ navigation }) => {
     if (!phone_no || !password) {
       // Alert.alert("Validation Error", "Please enter both phone number and password");
       Toast.show({
-      type: "error",
-      text1: "Validation Error",
-      text2: "Please enter both phone number and password",
-      position: "bottom",
-      visibilityTime: 3000,
-      text1Style: { fontSize: 15, fontWeight: "bold" },
-      text2Style: { fontSize: 12 },
-    });
+        type: "error",
+        text1: "Validation Error",
+        text2: "Please enter both phone number and password",
+        position: "bottom",
+        visibilityTime: 3000,
+        text1Style: { fontSize: 15, fontWeight: "bold" },
+        text2Style: { fontSize: 12 },
+      });
       return;
     }
 
@@ -182,11 +182,19 @@ const Login = ({ navigation }) => {
                     <TouchableOpacity onPress={() => navigation.navigate("Register")}>
                       <Text style={styles.loginLink}>Register</Text>
                     </TouchableOpacity>
+
                   </View>
+                  {/* Forgot Password */}
+                   <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 10 }}>
+                  <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}>
+                    <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                  </TouchableOpacity>
+                  </View>
+
                 </View>
               </ImageBackground>
             </View>
-               <Toast position="bottom" bottomOffset={90} />
+            <Toast position="bottom" bottomOffset={90} />
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAwareScrollView>
@@ -289,4 +297,15 @@ const styles = StyleSheet.create({
     flex: 1,
     color: "black",
   },
+
+  forgotPasswordText: {
+    color: "#ffffff",
+    marginTop: 5,
+    textAlign: "center",
+    // width: "75",
+    fontSize: 14,
+    padding:10,
+    textDecorationLine: "underline",
+  },
+
 });

@@ -12,6 +12,8 @@ import Register from "./src/Auth/Register";
 import Login from "./src/Auth/Login";
 import MainAppTabs from "./src/Components/BottomTab";
 import { WishlistProvider } from "./src/Context/WishlistContext";
+import ForgotPassword from "./src/Screens/ForgotPassword";
+
 import Toast from "react-native-toast-message";
 import { toastConfig } from "./src/Components/CustomToast";
 
@@ -56,6 +58,7 @@ function RootNavigator() {
       <Stack.Navigator initialRouteName={initialRoute}>
         <Stack.Screen name="Register" component={Register} options={{ headerShown: false }} />
         <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false }}/>
         <Stack.Screen name="MainApp" component={MainAppTabs} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
