@@ -627,6 +627,8 @@ import SearchwithCart from "../Components/SearchwithCart";
 import FastImage from "@d11/react-native-fast-image";
 import { useCart } from "../Context/CartContext";
 import axios from "axios";
+import { useRoute } from "@react-navigation/native";
+
 
 
 export default function Products({ navigation }) {
@@ -640,6 +642,12 @@ export default function Products({ navigation }) {
     pendingIds,
     refreshCart,
   } = useCart();
+
+  const route = useRoute();
+
+  const filter = route.params?.filter || "all";
+  const screenTitle = route.params?.title || "All Products";
+
 
   const { addToCart } = useAddToCart(customer_id);
   const { wishlist, addToWishlist, removeFromWishlist } = useContext(WishlistContext);
@@ -702,20 +710,79 @@ export default function Products({ navigation }) {
     }
   };
 
-  // 🔁 Fetch Products
+  // // 🔁 Fetch Products
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     let isActive = true;
+  //     const fetchModels = async () => {
+  //       setLoading(true);
+  //       try {
+  //         const res = await fetch(`${BASE_URL}/api/models`);
+  //         const data = await res.json();
+  //         if (isActive) {
+  //           setModels(data);
+  //           setFilteredModels(data);
+  //           const types = [...new Set(data.map((m) => m.category?.category_type))];
+  //           setCategoryTypes(types);
+  //           setQuery("");
+  //           setSortOrder("");
+  //           setSelectedType("");
+  //           setSelectedCategory("");
+  //           setSelectedBrand("");
+  //         }
+  //       } catch (err) {
+  //         console.error(err);
+  //       } finally {
+  //         if (isActive) setLoading(false);
+  //       }
+  //     };
+  //     fetchModels();
+  //     return () => {
+  //       isActive = false;
+  //     };
+  //   }, [])
+  // );
+
+
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
+
       const fetchModels = async () => {
         setLoading(true);
         try {
-          const res = await fetch(`${BASE_URL}/api/models`);
+          let url = `${BASE_URL}/api/models`;
+
+          if (filter === "new_arrivals") {
+            url = `${BASE_URL}/api/models/new-arrivals`;
+          }
+          else if (filter === "top_deals") {
+            url = `${BASE_URL}/api/models/top-deals`;
+          }
+          else if (filter === "best_selling") {
+            url = `${BASE_URL}/api/models/best-selling`;
+          }
+
+
+          const res = await fetch(url);
           const data = await res.json();
+
           if (isActive) {
-            setModels(data);
-            setFilteredModels(data);
-            const types = [...new Set(data.map((m) => m.category?.category_type))];
-            setCategoryTypes(types);
+            setModels(data.data || data); // supports both API formats
+            setFilteredModels(data.data || data);
+
+            // category types only for ALL PRODUCTS
+            if (filter === "all") {
+              const types = [
+                ...new Set(
+                  (data.data || data).map((m) => m.category?.category_type)
+                ),
+              ];
+              setCategoryTypes(types);
+            } else {
+              setCategoryTypes([]);
+            }
+
             setQuery("");
             setSortOrder("");
             setSelectedType("");
@@ -723,17 +790,20 @@ export default function Products({ navigation }) {
             setSelectedBrand("");
           }
         } catch (err) {
-          console.error(err);
+          console.error("Fetch products error:", err);
         } finally {
           if (isActive) setLoading(false);
         }
       };
+
       fetchModels();
+
       return () => {
         isActive = false;
       };
-    }, [])
+    }, [filter])
   );
+
 
   // 🔍 Filters
   useEffect(() => {
@@ -849,22 +919,22 @@ export default function Products({ navigation }) {
             color={wishlist[item.id] ? "#e91e63" : "#aaa"}
           />
         </TouchableOpacity>
-   <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate("Home", {
-                    screen: "ProductDetailPage",
-                    params: { product: item },
-                  })
-                }
-                activeOpacity={0.8}
-              >
-        {/* 🖼 Image */}
-        <FastImage
-          source={{ uri: item.model_image }}
-          style={styles.richImage}
-          resizeMode={FastImage.resizeMode.contain}
-        />
-</TouchableOpacity>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate("Home", {
+              screen: "ProductDetailPage",
+              params: { product: item },
+            })
+          }
+          activeOpacity={0.8}
+        >
+          {/* 🖼 Image */}
+          <FastImage
+            source={{ uri: item.model_image }}
+            style={styles.richImage}
+            resizeMode={FastImage.resizeMode.contain}
+          />
+        </TouchableOpacity>
         {/* 📦 Info */}
         <Text style={styles.richName} numberOfLines={1}>
           {item.model_name}
@@ -928,7 +998,9 @@ export default function Products({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerText}>All Products</Text>
+        {/* <Text style={styles.headerText}>All Products</Text> */}
+        <Text style={styles.headerText}>{screenTitle}</Text>
+
         <View style={{ width: 45 }} />
       </View>
 
@@ -981,66 +1053,68 @@ export default function Products({ navigation }) {
       </View>
 
       {/* Dropdown filters */}
-      <View style={styles.filterBar}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1, alignItems: "center" }}
-        >
-          {categoryTypes.map((t, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={[styles.filterChip, selectedType === t && styles.filterChipActive]}
-              onPress={() => {
-                setSelectedType(selectedType === t ? "" : t);
-                setSelectedCategory("");
-                setSelectedBrand("");
-              }}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  selectedType === t && styles.filterTextActive,
-                ]}
+      {filter === "all" && (
+
+        <View style={styles.filterBar}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ flexGrow: 1, alignItems: "center" }}
+          >
+            {categoryTypes.map((t, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={[styles.filterChip, selectedType === t && styles.filterChipActive]}
+                onPress={() => {
+                  setSelectedType(selectedType === t ? "" : t);
+                  setSelectedCategory("");
+                  setSelectedBrand("");
+                }}
               >
-                {t}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.filterText,
+                    selectedType === t && styles.filterTextActive,
+                  ]}
+                >
+                  {t}
+                </Text>
+              </TouchableOpacity>
+            ))}
 
-          <View style={styles.dropdownSmall}>
-            <Picker
-              selectedValue={selectedCategory}
-              style={styles.dropdown}
-              dropdownIconColor="#548c5c"
-              onValueChange={(val) => {
-                setSelectedCategory(val);
-                setSelectedBrand("");
-              }}
-            >
-              <Picker.Item label="Category" value="" color="#888" />
-              {categories.map((c) => (
-                <Picker.Item key={c.id} label={c.name} value={c.id} color="#222" />
-              ))}
-            </Picker>
-          </View>
+            <View style={styles.dropdownSmall}>
+              <Picker
+                selectedValue={selectedCategory}
+                style={styles.dropdown}
+                dropdownIconColor="#548c5c"
+                onValueChange={(val) => {
+                  setSelectedCategory(val);
+                  setSelectedBrand("");
+                }}
+              >
+                <Picker.Item label="Category" value="" color="#888" />
+                {categories.map((c) => (
+                  <Picker.Item key={c.id} label={c.name} value={c.id} color="#222" />
+                ))}
+              </Picker>
+            </View>
 
-          <View style={styles.dropdownSmall}>
-            <Picker
-              selectedValue={selectedBrand}
-              style={styles.dropdown}
-              dropdownIconColor="#548c5c"
-              onValueChange={(val) => setSelectedBrand(val)}
-            >
-              <Picker.Item label="Brand" value="" color="#888" />
-              {brands.map((b) => (
-                <Picker.Item key={b.id} label={b.name} value={b.id} color="#222" />
-              ))}
-            </Picker>
-          </View>
-        </ScrollView>
-      </View>
-
+            <View style={styles.dropdownSmall}>
+              <Picker
+                selectedValue={selectedBrand}
+                style={styles.dropdown}
+                dropdownIconColor="#548c5c"
+                onValueChange={(val) => setSelectedBrand(val)}
+              >
+                <Picker.Item label="Brand" value="" color="#888" />
+                {brands.map((b) => (
+                  <Picker.Item key={b.id} label={b.name} value={b.id} color="#222" />
+                ))}
+              </Picker>
+            </View>
+          </ScrollView>
+        </View>
+      )}
       {loading ? (
         <View>
           <FastImage

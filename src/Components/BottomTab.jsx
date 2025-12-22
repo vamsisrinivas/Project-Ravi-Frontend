@@ -41,6 +41,8 @@ function HomeStackScreen() {
       <HomeStack.Screen name="HomeScreen" component={Home} />
       <HomeStack.Screen name="BrandsPage" component={BrandsPage} />
       <HomeStack.Screen name="CategoriesPage" component={CategoriesPage} />
+      <HomeStack.Screen name="Products" component={Products} />
+
       <HomeStack.Screen name="CategoryBrands" component={CategoryBrands} />
       <HomeStack.Screen name="ModelsPage" component={ModelsPage} />
       <HomeStack.Screen name="ProductDetailPage" component={ProductDetailPage} />
@@ -48,9 +50,9 @@ function HomeStackScreen() {
       <HomeStack.Screen name="Checkout" component={CheckoutScreen} />
       <HomeStack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} options={{ headerShown: false }} />
       <HomeStack.Screen name="OrderDetails" component={OrderDetailsScreen} options={{ headerShown: false }} />
-      <HomeStack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false }}/>
-            <HomeStack.Screen name="MyProfile" component={ProfileScreen} options={{ headerShown: false }}/>
-                        <HomeStack.Screen name="ContactUs" component={ContactUs} options={{ headerShown: false }}/>
+      <HomeStack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false }} />
+      <HomeStack.Screen name="MyProfile" component={ProfileScreen} options={{ headerShown: false }} />
+      <HomeStack.Screen name="ContactUs" component={ContactUs} options={{ headerShown: false }} />
 
 
 
@@ -80,7 +82,7 @@ function ProfileStackScreen() {
       <ProfileStack.Screen name="DeliveryAddress" component={AddressScreen} />
       <ProfileStack.Screen name="Wishlist" component={WishlistScreen} />
       <ProfileStack.Screen name="MyProfile" component={ProfileScreen} />
-       <ProfileStack.Screen name="ContactUs" component={ContactUs} />
+      <ProfileStack.Screen name="ContactUs" component={ContactUs} />
 
     </ProfileStack.Navigator>
   );

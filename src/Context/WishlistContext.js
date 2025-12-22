@@ -77,3 +77,74 @@ export const WishlistProvider = ({ children }) => {
     </WishlistContext.Provider>
   );
 };
+
+
+// export const WishlistProvider = ({ children }) => {
+//   const { user } = useContext(AuthContext);
+//   const customer_id = user?.customer_id;
+
+//   const [wishlist, setWishlist] = useState({});
+//   const [loading, setLoading] = useState(false);
+
+//   const fetchWishlist = async () => {
+//     if (!customer_id) return;
+//     setLoading(true);
+//     try {
+//       const res = await axios.get(`${BASE_URL}/api/wishlist/${customer_id}`);
+//       if (res.data.success) {
+//         const map = {};
+//         res.data.data.forEach((item) => {
+//           map[item.model_id] = item;
+//         });
+//         setWishlist(map);
+//       }
+//     } catch (err) {
+//       console.error("❌ Error fetching wishlist:", err.message);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const addToWishlist = async (model_id) => {
+//     if (!customer_id || loading) return;
+//     try {
+//       await axios.post(`${BASE_URL}/api/wishlist/add`, { customer_id, model_id });
+//       fetchWishlist();
+//     } catch (err) {
+//       console.error("❌ Error adding to wishlist:", err.message);
+//     }
+//   };
+
+//   const removeFromWishlist = async (model_id) => {
+//     if (!customer_id || loading) return;
+//     try {
+//       await axios.delete(`${BASE_URL}/api/wishlist/${customer_id}/${model_id}`);
+//       fetchWishlist();
+//     } catch (err) {
+//       console.error("❌ Error removing from wishlist:", err.message);
+//     }
+//   };
+
+//   useEffect(() => {
+//     if (customer_id) {
+//       fetchWishlist();
+//     } else {
+//       setWishlist({});
+//     }
+//   }, [customer_id]);
+
+//   return (
+//     <WishlistContext.Provider
+//       value={{
+//         wishlist,
+//         wishlistArray: Object.values(wishlist),
+//         addToWishlist,
+//         removeFromWishlist,
+//         fetchWishlist,
+//         loading,
+//       }}
+//     >
+//       {children}
+//     </WishlistContext.Provider>
+//   );
+// };

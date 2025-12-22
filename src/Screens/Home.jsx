@@ -27,6 +27,12 @@ import axios from "axios";
 import BASE_URL from "../Config/api";
 import SearchwithCart from "../Components/SearchwithCart";
 import Banners from "./Banners";
+import TopDealsSlider from "./TopDealsSlider";
+import HomeCouponsSlider from "./HomeCouponsSlider";
+import useAddToCart from "../Components/AddToCartFun";
+import { AuthContext } from "../Context/AuthContext";
+import { useContext } from "react";
+
 
 const { width } = Dimensions.get("window");
 
@@ -37,6 +43,16 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const navigation = useNavigation();
+  const [topDeals, setTopDeals] = useState([]);   // ✅ FIX
+  const [newArrivals, setnewArrivals] = useState([])
+  const [bestSelling, setbestSelling] = useState([])
+  const [coupons, setCoupons] = useState([]);
+
+
+  const { users } = useContext(AuthContext);
+  const customer_id = user?.customer_id;
+  const { addToCart } = useAddToCart(customer_id);
+
 
   useEffect(() => {
     (async () => {
@@ -47,6 +63,86 @@ const Home = () => {
     fetchCategories();
   }, []);
 
+  useEffect(() => {
+    fetchTopDeals();
+  }, []);
+
+  useEffect(() => {
+    fetchNewArrivals();
+  }, []);
+  useEffect(() => {
+    fetchBestSelling();
+  }, []);
+
+
+  useEffect(() => {
+    fetchCoupons();
+  }, []);
+
+  const fetchCoupons = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/coupons/all`);
+      if (res.data?.success && Array.isArray(res.data.coupons)) {
+        setCoupons(res.data.coupons);
+      } else {
+        setCoupons([]); // safety fallback
+      }
+    } catch (error) {
+      console.error("Coupons fetch failed:", error);
+      setCoupons([]); // safety fallback
+    }
+  };
+
+
+  const fetchTopDeals = async () => {
+    try {
+      const res = await axios.get(
+        `${BASE_URL}/api/models/top-deals`
+      );
+
+      if (res.data?.success) {
+        setTopDeals(res.data.data);
+      }
+    } catch (error) {
+      console.error("Top deals error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const fetchNewArrivals = async () => {
+    try {
+      const res = await axios.get(
+        `${BASE_URL}/api/models/new-arrivals`
+      );
+
+      if (res.data?.success) {
+        setnewArrivals(res.data.data);
+      }
+    } catch (error) {
+      console.error("Top deals error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const fetchBestSelling = async () => {
+    try {
+      const res = await axios.get(
+        `${BASE_URL}/api/models/best-selling`
+      );
+
+      if (res.data?.success) {
+        setbestSelling(res.data.data);
+      }
+    } catch (error) {
+      console.error("Top deals error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   const fetchBrands = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/brands`);
@@ -164,13 +260,13 @@ const Home = () => {
 
                 {loading ? (
                   <ActivityIndicator size="large" color="green" />
-        //             <View>
-        //   <FastImage
-        //     source={require("../assets/loading.gif")}
-        //     style={styles.gif}
-        //     resizeMode={FastImage.resizeMode.contain}
-        //   />
-        // </View>
+                  //             <View>
+                  //   <FastImage
+                  //     source={require("../assets/loading.gif")}
+                  //     style={styles.gif}
+                  //     resizeMode={FastImage.resizeMode.contain}
+                  //   />
+                  // </View>
                 ) : (
                   <ScrollView
                     horizontal
@@ -205,6 +301,23 @@ const Home = () => {
                 {/* Banners */}
                 <Banners />
               </View>
+              <TopDealsSlider
+                title="🔥 Top Deals"
+                data={topDeals}
+                onPressItem={(item) =>
+                  navigation.navigate("ProductDetailPage", { product: item })
+                }
+                onAddToCart={(item) => handleAddToCart(item)}   // ✅ FIX 1
+                onViewAll={() => {
+                  console.log("Navigating to Products"); // 🔍 DEBUG
+                  navigation.navigate("Products", {
+                    filter: "top-deals",
+                    title: " 🔥 Top-Deals",
+                  })
+                }
+                }
+              />
+
 
               {/* Top Brands */}
               <View style={styles.contentContainer}>
@@ -214,6 +327,7 @@ const Home = () => {
                     <Text style={styles.viewAllText}>View All</Text>
                   </TouchableOpacity>
                 </View>
+
 
                 <FlatList
                   data={brands.slice(0, 8)}
@@ -250,6 +364,55 @@ const Home = () => {
                   contentContainerStyle={styles.brandGrid}
                 />
 
+              </View>
+
+
+              {Array.isArray(coupons) && coupons.length > 0 && (
+                <HomeCouponsSlider
+                  coupons={coupons}
+                  onApply={(coupon) => {
+                    // For now just store / show
+                    console.log("Coupon selected:", coupon.coupon_code);
+                  }}
+                />
+              )}
+
+              <View>
+                <TopDealsSlider
+                  title="🆕 New Arrivals"
+                  data={newArrivals}
+                  onPressItem={(item) =>
+                    navigation.navigate("ProductDetailPage", { product: item })
+                  }
+                  onAddToCart={(item) => handleAddToCart(item)}   // ✅ FIX 1
+
+                  onViewAll={() => {
+                    console.log(newArrivals)
+                    navigation.navigate("Products", {
+                      filter: "new_arrivals",
+                      title: "New Arrivals",
+                    });
+                  }}
+                />
+              </View>
+
+              <View>
+                <TopDealsSlider
+                  title="🏆 Best Selling"
+                  data={bestSelling}
+                  onPressItem={(item) =>
+                    navigation.navigate("ProductDetailPage", { product: item })
+                  }
+                  onAddToCart={(item) => handleAddToCart(item)}   // ✅ FIX 1
+
+                  onViewAll={() => {
+                    console.log(newArrivals)
+                    navigation.navigate("Products", {
+                      filter: "best_selling",
+                      title: "Best Selling ",
+                    });
+                  }}
+                />
               </View>
 
               <View style={{ height: 20 }} />
@@ -395,7 +558,7 @@ const styles = StyleSheet.create({
     color: "#444",
     textAlign: "center",
   },
-   gif: {
+  gif: {
     width: "100%",
     height: "80%",
   },
