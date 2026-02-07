@@ -12,24 +12,95 @@ import axios from "axios";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import BASE_URL from "../Config/api";
 import LinearGradient from "react-native-linear-gradient";
+import Toast from "react-native-toast-message";
+
 
 const OrderDetailsScreen = ({ route, navigation }) => {
   const { order_id } = route.params;
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refundInfo, setRefundInfo] = useState(null);
+
 
   useEffect(() => {
     fetchOrderDetails();
   }, []);
 
+  // const fetchOrderDetails = async () => {
+  //   try {
+  //     const res = await axios.get(`${BASE_URL}/api/orders/details/${order_id}`);
+  //     setOrder(res.data);
+  //   } catch (error) {
+  //     console.error("Error fetching order details:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const fetchOrderDetails = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/orders/details/${order_id}`);
       setOrder(res.data);
+
+      if (res.data.status === "cancelled") {
+        fetchRefundStatus();
+      }
     } catch (error) {
       console.error("Error fetching order details:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const canCancelOrder = () => {
+    if (!order) return false;
+    if (order.status === "cancelled") return false;
+
+    const cancellableStatuses = ["paid", "orderplaced"];
+    const cancellableDelivery = ["pending", "orderplaced"];
+
+    return (
+      cancellableStatuses.includes(order.status) &&
+      cancellableDelivery.includes(order.deliverystatus)
+    );
+  };
+
+
+  const cancelOrder = async () => {
+    try {
+      setLoading(true);
+
+      const res = await axios.post(`${BASE_URL}/api/orders/cancel`, {
+        order_id: order.order_id,
+      });
+      Toast.show({ type: "success", text1: res.data.message || "Refund initiated successfully", });
+
+      // alert(res.data.message || "Order cancelled");
+
+      await fetchOrderDetails();   // refresh order
+      await fetchRefundStatus();   // fetch refund info
+
+    } catch (err) {
+      Toast.show({ type: "error", text1: err.response?.data?.message || "Unable to cancel order", });
+      alert(err.response?.data?.message || "Unable to cancel order");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
+  const fetchRefundStatus = async () => {
+    try {
+      const res = await axios.get(
+        `${BASE_URL}/api/orders/refund/${order_id}`
+      );
+
+      if (res.data.refunded) {
+        setRefundInfo(res.data.refund);
+      }
+    } catch (err) {
+      console.error("Refund status fetch failed", err);
     }
   };
 
@@ -49,13 +120,45 @@ const OrderDetailsScreen = ({ route, navigation }) => {
     );
   }
 
+  const getStatusColors = (status) => {
+    switch (status?.toLowerCase()) {
+      case "paid":
+        return {
+          gradient: ["#4CAF50", "#81C784"], // green
+          text: "#1B5E20",
+        };
+
+      case "cancelled":
+        return {
+          gradient: ["#E53935", "#EF5350"], // red
+          text: "#FFFFFF",
+        };
+
+      case "refunded":
+        return {
+          gradient: ["#8E24AA", "#BA68C8"], // purple
+          text: "#FFFFFF",
+        };
+
+      default:
+        return {
+          gradient: ["#BDBDBD", "#E0E0E0"], // grey
+          text: "#424242",
+        };
+    }
+  };
+
+
+
   const firstItem = order.items?.[0]?.product;
+  const statusColors = getStatusColors(order.status);
+
 
   return (
     <ScrollView style={styles.container}
-     contentContainerStyle={{ paddingBottom: 30 }}
-  showsVerticalScrollIndicator={false}
-  nestedScrollEnabled={true}>
+      contentContainerStyle={{ paddingBottom: 30 }}
+      showsVerticalScrollIndicator={false}
+      nestedScrollEnabled={true}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -67,17 +170,24 @@ const OrderDetailsScreen = ({ route, navigation }) => {
 
       {/* Order Summary */}
       <View style={styles.card}>
+
         <LinearGradient
-          colors={["#4CAF50", "#81C784"]}
+          colors={statusColors.gradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.orderHeader}
         >
-          <Text style={styles.orderId}>Order ID: {order.order_id}</Text>
-          <Text style={styles.status}>{order.status.toUpperCase()}</Text>
+          <Text style={styles.orderId}>
+            Order ID: {order.order_id}
+          </Text>
+
+          <Text style={[styles.status, { color: statusColors.text }]}>
+            {order.status.toUpperCase()}
+          </Text>
         </LinearGradient>
 
-   
+
+
 
         <View style={styles.orderInfo}>
           <Text style={styles.infoText}>
@@ -163,6 +273,47 @@ const OrderDetailsScreen = ({ route, navigation }) => {
           <Text style={styles.reorderText}>Reorder</Text>
         </LinearGradient>
       </TouchableOpacity>
+
+      {canCancelOrder() ? (
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={cancelOrder}
+        >
+          <Text style={styles.cancelText}>Cancel Order</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.cancelDisabled}>
+          <Text style={styles.cancelDisabledText}>
+            Order cannot be cancelled after shipping
+          </Text>
+        </View>
+
+
+      )}
+      {refundInfo && (
+        <View style={styles.refundBox}>
+          <Text style={styles.refundTitle}>Refund Details</Text>
+
+          <Text style={styles.refundText}>
+            Refund Amount: ₹{Number(refundInfo.amount).toFixed(2)}
+          </Text>
+
+          <Text
+            style={[
+              styles.refundStatus,
+              refundInfo.status === "processed"
+                ? styles.refundSuccess
+                : styles.refundPending,
+            ]}
+          >
+            {refundInfo.status === "processed"
+              ? "Refund Processed"
+              : "Refund Pending"}
+          </Text>
+        </View>
+      )}
+
+
     </ScrollView>
   );
 };
@@ -255,4 +406,67 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginLeft: 6,
   },
+
+  cancelButton: {
+    marginHorizontal: 40,
+    marginBottom: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    borderWidth: 1.5,
+    borderColor: "#E53935",
+    alignItems: "center",
+  },
+
+  cancelText: {
+    color: "#E53935",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+
+  cancelDisabled: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+
+  cancelDisabledText: {
+    color: "#999",
+    fontSize: 13,
+  },
+  refundBox: {
+    backgroundColor: "#fff",
+    marginHorizontal: 15,
+    marginBottom: 25,
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+
+  refundTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 6,
+    color: "#333",
+  },
+
+  refundText: {
+    fontSize: 13,
+    color: "#555",
+    marginBottom: 4,
+  },
+
+  refundStatus: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginTop: 6,
+  },
+
+  refundSuccess: {
+    color: "#4CAF50",
+  },
+
+  refundPending: {
+    color: "#FB8C00",
+  },
+
 });

@@ -10,9 +10,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCart } from "../Context/CartContext";
 import BASE_URL from "../Config/api";
 import CartButton from "./AddtoCart"; // 👈 new import
+import { useIsFocused } from "@react-navigation/native";
 
 const SearchwithCart = ({ searchValue, onSearchChange, onCartPress }) => {
   const { setCartCount } = useCart();
+   const isFocused = useIsFocused();
 
   useEffect(() => {
     const fetchCartCount = async () => {
@@ -35,10 +37,12 @@ const SearchwithCart = ({ searchValue, onSearchChange, onCartPress }) => {
       }
     };
 
-    fetchCartCount();
-    const interval = setInterval(fetchCartCount, 5000); // ⏳ safer than 100ms
-    return () => clearInterval(interval);
-  }, [setCartCount]);
+        if (isFocused) {
+      fetchCartCount();
+    }
+  }, [isFocused, setCartCount]);
+
+
 
   return (
     <View style={styles.container}>

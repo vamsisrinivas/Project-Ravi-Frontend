@@ -23,7 +23,7 @@ const Stack = createNativeStackNavigator();
 function RootNavigator() {
   const [initialRoute, setInitialRoute] = useState(null);
 
- useEffect(() => {
+  useEffect(() => {
     const timer = setTimeout(() => {
       SplashScreen.hide();
     }, 2000); // ⏱️ 2 seconds delay
@@ -58,7 +58,7 @@ function RootNavigator() {
       <Stack.Navigator initialRouteName={initialRoute}>
         <Stack.Screen name="Register" component={Register} options={{ headerShown: false }} />
         <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false }}/>
+        <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false }} />
         <Stack.Screen name="MainApp" component={MainAppTabs} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
@@ -71,7 +71,7 @@ export default function App() {
       <CartProvider>
         <WishlistProvider>
           <RootNavigator />
-            <Toast config={toastConfig} />
+          <Toast config={toastConfig} />
         </WishlistProvider>
       </CartProvider>
     </AuthProvider>

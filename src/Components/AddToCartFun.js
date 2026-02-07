@@ -103,11 +103,18 @@ export default function useAddToCart(customer_id) {
     try {
       setLoading(true);
 
+      // const payload = {
+      //   customer_id,
+      //   model_id: item.id,
+      //   quantity,
+      // };
+
       const payload = {
         customer_id,
-        model_id: item.id,
+        model_id: item.model_id ?? item.id, // ✅ FIX
         quantity,
       };
+
 
       const res = await axios.post(`${BASE_URL}/api/cart`, payload);
 
@@ -128,33 +135,33 @@ export default function useAddToCart(customer_id) {
           text1: res.data?.message || "Failed to add item",
         });
       }
-    }catch (error) {
-  if (error.response?.status === 400) {
-    Toast.show({
-      type: "info",
-      text1: error.response.data?.message || "Stock limit reached",
-    });
-    return;
-  }
+    } catch (error) {
+      if (error.response?.status === 400) {
+        Toast.show({
+          type: "info",
+          text1: error.response.data?.message || "Stock limit reached",
+        });
+        return;
+      }
 
-  if (error.response) {
-    Toast.show({
-      type: "error",
-      text1: error.response.data?.message || "Failed to add item",
-    });
-  } else {
-    Toast.show({
-      type: "error",
-      text1: "Network Error",
-      text2: "Please try again",
-    });
-  }
+      if (error.response) {
+        Toast.show({
+          type: "error",
+          text1: error.response.data?.message || "Failed to add item",
+        });
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Network Error",
+          text2: "Please try again",
+        });
+      }
 
-  // ✅ Use log instead of error
-  if (__DEV__) {
-    console.log("AddToCart handled:", error.message);
-  }
-}
+      // ✅ Use log instead of error
+      if (__DEV__) {
+        console.log("AddToCart handled:", error.message);
+      }
+    }
 
     finally {
       setLoading(false);

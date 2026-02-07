@@ -904,7 +904,7 @@ export default function CheckoutScreen({ navigation }) {
     const options = {
       description: "RV-AGRIHUB Payment",
       currency: "INR",
-      key: process.env.RAZORPAY_KEY || "rzp_test_RX082JQF5LtgWu",
+      key: process.env.RAZORPAY_KEY || "rzp_test_RwfO9rXzqVn3Oe",
       amount: razorpayOrder.amount,
       order_id: razorpayOrder.id,
       name: "RV-AGRIHUB",

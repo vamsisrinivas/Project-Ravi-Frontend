@@ -66,6 +66,8 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import DeliveryAddress from "../Screens/AddressScreen.jsx";
+import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
+
 
 const Profile = () => {
   const navigation = useNavigation();
@@ -93,7 +95,7 @@ const Profile = () => {
     {
       id: 1,
       title: "My Profile",
-      icon: <Ionicons name="person-circle-outline" size={26} color="#548C5C" />,
+      icon: <Ionicons name="person-circle" size={26} color="#548C5C" />,
       onPress: () => navigation.navigate("MyProfile"),
     },
     {
@@ -105,21 +107,29 @@ const Profile = () => {
     {
       id: 3,
       title: "Wishlist",
-      icon: <Ionicons name="heart-outline" size={26} color="#548C5C" />,
+      icon: <Ionicons name="heart" size={26} color="#548C5C" />,
       onPress: () => navigation.navigate("Wishlist"),
+    },
+      {
+      id: 6,
+      title: "Seedling(Naru)",
+      icon: <Ionicons name="shield-checkmark" size={24} color="#548C5C" />,
+      onPress: () => navigation.navigate("Approved-Seedling"),
     },
     {
       id: 4,
       title: "Delivery Address",
-      icon: <Ionicons name="location-outline" size={26} color="#548C5C" />,
+      icon: <Ionicons name="location" size={26} color="#548C5C" />,
       onPress: () => navigation.navigate("DeliveryAddress"),
     },
+    
     {
       id: 5,
       title: "Contact Us",
       icon: <FontAwesome name="phone" size={24} color="#548C5C" />,
       onPress: () => navigation.navigate("ContactUs"),
     },
+   
   ];
 
   return (

@@ -14,12 +14,17 @@ import useAddToCart from "../Components/AddToCartFun";
 import { AuthContext } from "../Context/AuthContext";
 import { useContext } from "react";
 import { useFocusEffect } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
+import { WishlistContext } from "../Context/WishlistContext";
+import Toast from "react-native-toast-message";
+
+
+
 
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.40;
 
-// const TopDealsSlider = ({ data, onPressItem, onAddToCart,onViewAll,title }) => {
 const TopDealsSlider = ({
     data,
     onPressItem,
@@ -37,6 +42,10 @@ const TopDealsSlider = ({
     const { user } = useContext(AuthContext);
     const customer_id = user?.customer_id;
     const { addToCart } = useAddToCart(customer_id);
+    const navigation = useNavigation();
+    const { wishlist, addToWishlist, removeFromWishlist } =
+        useContext(WishlistContext);
+
 
     const getCartRow = (productId) =>
         cartItems.find((c) => Number(c.model_id) === Number(productId));
@@ -65,6 +74,7 @@ const TopDealsSlider = ({
         const cartId = cartRow?.id;
         const isPending = pendingIds.includes(cartId);
         const outOfStock = Number(item.available_stock) <= 0;
+        const isWishlisted = !!wishlist[item.id];
 
         return (
             <TouchableOpacity
@@ -114,6 +124,36 @@ const TopDealsSlider = ({
                         <Text style={styles.mrp}>₹{item.price}</Text>
                     )}
                 </View>
+                {/* ❤️ Wishlist Icon */}
+                {/* ❤️ Wishlist Toggle */}
+                <TouchableOpacity
+                    style={styles.wishlistBtn}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                        if (isWishlisted) {
+                            removeFromWishlist(item.id); // model_id
+                            Toast.show({
+                                type: "error",
+                                text1: "Removed from wishlist",
+                            });
+                        } else {
+                            addToWishlist(item.id); // model_id
+                            Toast.show({
+                                type: "success",
+                                text1: "Added to wishlist",
+                            });
+                        }
+                    }}
+                >
+                    <Ionicons
+                        name={isWishlisted ? "heart" : "heart-outline"}
+                        size={20}
+                        color={isWishlisted ? "#ff4081" : "#999"}
+                    />
+                </TouchableOpacity>
+
+
+
 
                 {/* ➕ Add to Cart */}
                 {/* 🛒 Cart Action */}
@@ -154,34 +194,15 @@ const TopDealsSlider = ({
 
                         <Text style={styles.qtyText}>{qty}</Text>
 
-{/* 
-                        <TouchableOpacity
-                            style={[
-                                styles.qtyBtn,
-                                qty >= Number(item.available_stock) && { opacity: 0.5 }
-                            ]}
-                            disabled={pendingIds.includes(cartId)}
-                            onPress={() => {
-                                if (qty >= Number(item.available_stock)) {
-                                    Alert.alert(
-                                        "Stock Limit",
-                                        `Only ${item.available_stock} items available`
-                                    );
-                                    return;
-                                }
-                                increaseQty(cartId);
-                            }}
-                        >
-                            <Ionicons name="add" size={16} color="#fff" />
-                        </TouchableOpacity> */}
+
 
                         <TouchableOpacity
-  style={styles.qtyBtn}
-  disabled={pendingIds.includes(cartId)}
-  onPress={() => increaseQty(cartId)}
->
-  <Ionicons name="add" size={16} color="#fff" />
-</TouchableOpacity>
+                            style={styles.qtyBtn}
+                            disabled={pendingIds.includes(cartId)}
+                            onPress={() => increaseQty(cartId)}
+                        >
+                            <Ionicons name="add" size={16} color="#fff" />
+                        </TouchableOpacity>
 
                     </View>
                 )}
@@ -219,110 +240,6 @@ const TopDealsSlider = ({
 };
 
 export default TopDealsSlider;
-// const styles = StyleSheet.create({
-//   container: {
-//     marginTop: 16,
-//   },
-
-//   header: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//     paddingHorizontal: 14,
-//     marginBottom: 8,
-//   },
-
-//   heading: {
-//     fontSize: 18,
-//     fontWeight: "700",
-//     color: "#111",
-//   },
-
-//   viewAll: {
-//     fontSize: 13,
-//     color: "#00b259",
-//     fontWeight: "600",
-//   },
-
-//   card: {
-//     width: CARD_WIDTH,
-//     backgroundColor: "#fff",
-//     borderRadius: 14,
-//     padding: 10,
-//     marginRight: 12,
-//     elevation: 5,
-//     shadowColor: "#000",
-//     shadowOpacity: 0.12,
-//     shadowOffset: { width: 0, height: 2 },
-//     shadowRadius: 6,
-//   },
-
-//   badge: {
-//     position: "absolute",
-//     top: 8,
-//     left: 8,
-//     backgroundColor: "#00b259",
-//     paddingHorizontal: 6,
-//     paddingVertical: 3,
-//     borderRadius: 6,
-//     zIndex: 10,
-//   },
-
-//   badgeText: {
-//     color: "#fff",
-//     fontSize: 11,
-//     fontWeight: "700",
-//   },
-
-//   image: {
-//     width: "100%",
-//     height: 110,
-//     marginTop: 12,
-//   },
-
-//   title: {
-//     fontSize: 14,
-//     fontWeight: "600",
-//     color: "#222",
-//     marginTop: 6,
-//     minHeight: 36,
-//   },
-
-//   priceRow: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     marginTop: 4,
-//   },
-
-//   price: {
-//     fontSize: 16,
-//     fontWeight: "700",
-//     color: "#000",
-//     marginRight: 6,
-//   },
-
-//   mrp: {
-//     fontSize: 13,
-//     color: "#888",
-//     textDecorationLine: "line-through",
-//   },
-
-//   cartBtn: {
-//     marginTop: 8,
-//     borderWidth: 1,
-//     borderColor: "#00b259",
-//     borderRadius: 8,
-//     paddingVertical: 6,
-//     alignItems: "center",
-//   },
-
-//   cartText: {
-//     color: "#00b259",
-//     fontWeight: "700",
-//     fontSize: 13,
-//   },
-// });
-
 
 const styles = StyleSheet.create({
     container: {
@@ -476,6 +393,21 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontWeight: "700",
         color: "#b30000",
+    },
+
+
+    wishlistBtn: {
+        position: "absolute",
+        top: 8,
+        right: 8,
+        backgroundColor: "#fff",
+        borderRadius: 20,
+        padding: 5,
+        elevation: 4,
+        shadowColor: "#000",
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        shadowOffset: { width: 0, height: 1 },
     },
 
 

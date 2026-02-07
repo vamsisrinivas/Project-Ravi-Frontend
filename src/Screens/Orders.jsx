@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   SafeAreaView,
   TouchableOpacity,
-  Animated,LayoutAnimation, Platform, UIManager
+  Animated, LayoutAnimation, Platform, UIManager
 } from "react-native";
 import axios from "axios";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -17,11 +17,11 @@ import SearchwithCart from "../Components/SearchwithCart";
 import GoHomeButton from "../Components/GoHomeButton";
 import BASE_URL from "../Config/api";
 import { AuthContext } from "../Context/AuthContext";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import LinearGradient from "react-native-linear-gradient";
 import { CheckCircle, Package, Truck, Home, Clock } from "lucide-react-native";
 
-const OrderStatusBar = ({ deliverystatus }) => {
+const OrderStatusBar = ({ deliverystatus,status, refund_status }) => {
   const steps = [
     { key: "orderplaced", label: "Placed", icon: CheckCircle },
     { key: "processing", label: "Processing", icon: Package },
@@ -29,19 +29,42 @@ const OrderStatusBar = ({ deliverystatus }) => {
     { key: "delivered", label: "Delivered", icon: Home },
   ];
 
-  const activeIndex = steps.findIndex(
-    (step) => step.key === (deliverystatus?.toLowerCase?.() || "orderplaced")
-  );
+  // const activeIndex = steps.findIndex(
+  //   (step) => step.key === (deliverystatus?.toLowerCase?.() || "orderplaced")
+  // );
+   // ✅ DEFINE FIRST
+  const isCancelled =
+    deliverystatus?.toLowerCase() === "cancelled" ||
+    status?.toLowerCase() === "cancelled" ||
+    status?.toLowerCase() === "refunded" ||
+    refund_status?.toLowerCase() === "processed";
+
+  const activeIndex = isCancelled
+    ? 0
+    : steps.findIndex(
+        (step) =>
+          step.key === (deliverystatus?.toLowerCase?.() || "orderplaced")
+      );
 
   const progress = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
+  // useEffect(() => {
+  //   Animated.timing(progress, {
+  //     toValue: (activeIndex / (steps.length - 1)) * 100,
+  //     duration: 700,
+  //     useNativeDriver: false,
+  //   }).start();
+  // }, [activeIndex]);
+
+    useEffect(() => {
     Animated.timing(progress, {
-      toValue: (activeIndex / (steps.length - 1)) * 100,
-      duration: 700,
+      toValue: isCancelled
+        ? 0
+        : (activeIndex / (steps.length - 1)) * 100,
+      duration: 600,
       useNativeDriver: false,
     }).start();
-  }, [activeIndex]);
+  }, [activeIndex, isCancelled]);
 
   const progressWidth = progress.interpolate({
     inputRange: [0, 100],
@@ -123,7 +146,9 @@ const Orders = () => {
   // ✅ Status background/text map
   const statusStyles = {
     paid: { backgroundColor: "#C8E6C9", color: "#256029" },
-    OrderPlaced: { backgroundColor: "#FFCDD2", color: "#C62828" },
+    cancelled: { backgroundColor: "#FFCDD2", color: "#C62828" },
+    refunded: { backgroundColor: "#E1BEE7", color: "#6A1B9A" },
+    OrderPlaced: { backgroundColor: "#FFCDD2", color: "#85e607ff" },
     processing: { backgroundColor: "#FFE0B2", color: "#EF6C00" },
     shipped: { backgroundColor: "#BBDEFB", color: "#0D47A1" },
     delivered: { backgroundColor: "#C8E6C9", color: "#256029" },
@@ -163,9 +188,19 @@ const Orders = () => {
     }
   };
 
-  useEffect(() => {
-    if (customer_id) fetchOrders(1);
-  }, [customer_id]);
+  // useEffect(() => {
+  //   if (customer_id) fetchOrders(1);
+  // }, [customer_id]);
+
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (customer_id) {
+        fetchOrders(1, true);   // 🔥 force refresh
+      }
+    }, [customer_id])
+  );
+
 
   const loadMoreOrders = () => {
     if (!hasMore || loading || refreshing) return;
@@ -181,53 +216,69 @@ const Orders = () => {
   };
 
 
-//   // Enable LayoutAnimation on Android
-// if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental && !global._IS_FABRIC_ENABLED) {
-//   UIManager.setLayoutAnimationEnabledExperimental(true);
-// }
+  //   // Enable LayoutAnimation on Android
+  // if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental && !global._IS_FABRIC_ENABLED) {
+  //   UIManager.setLayoutAnimationEnabledExperimental(true);
+  // }
 
-// const toggleExpand = (orderId) => {
-//  if (Platform.OS === "android" && !global._IS_FABRIC_ENABLED) {
-//     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-//   }
-//   setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
-// };
+  // const toggleExpand = (orderId) => {
+  //  if (Platform.OS === "android" && !global._IS_FABRIC_ENABLED) {
+  //     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  //   }
+  //   setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
+  // };
 
-// Detect New Architecture (Fabric)
-const isFabric = !!global?.nativeFabricUIManager;
+  // Detect New Architecture (Fabric)
+  const isFabric = !!global?.nativeFabricUIManager;
 
-// Enable LayoutAnimation on Android only (Old Architecture)
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental &&
-  !isFabric
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
-const toggleExpand = (orderId) => {
-  if (Platform.OS === "android" && !isFabric) {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  // Enable LayoutAnimation on Android only (Old Architecture)
+  if (
+    Platform.OS === "android" &&
+    UIManager.setLayoutAnimationEnabledExperimental &&
+    !isFabric
+  ) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
   }
-  setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
-};
+
+  const toggleExpand = (orderId) => {
+    if (Platform.OS === "android" && !isFabric) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
+    setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
+  };
+
+  const getDisplayStatus = (order) => {
+    const delivery = order?.deliverystatus?.toLowerCase();
+    const refund = order?.refund_status?.toLowerCase();
+    const status = order?.status?.toLowerCase();
+
+    if (delivery === "cancelled") {
+      return refund === "processed" ? "REFUNDED" : "CANCELLED";
+    }
+
+    if (status === "paid") return "PAID";
+
+    return status?.toUpperCase() || "ORDER PLACED";
+  };
 
 
 
   const renderItem = ({ item }) => {
- const isExpanded = expandedOrderId === item.order_id;
+    const isExpanded = expandedOrderId === item.order_id;
+    const displayStatus = getDisplayStatus(item);
+    const statusKey = displayStatus.toLowerCase();
 
-  return (
-    <View style={styles.orderCard}>
-      {/* Header (Order ID + Status) */}
-      <TouchableOpacity
-        style={styles.orderHeader}
-        onPress={() => toggleExpand(item.order_id)}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.orderId}>Order ID: {item.order_id}</Text>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Text
+    return (
+      <View style={styles.orderCard}>
+        {/* Header (Order ID + Status) */}
+        <TouchableOpacity
+          style={styles.orderHeader}
+          onPress={() => toggleExpand(item.order_id)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.orderId}>Order ID: {item.order_id}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {/* <Text
             style={[
               styles.status,
               statusStyles[item.status?.toLowerCase()] || statusStyles.OrderPlaced,
@@ -235,79 +286,97 @@ const toggleExpand = (orderId) => {
             ]}
           >
             {item.status.toUpperCase()}
-          </Text>
-          <Ionicons
-            name={isExpanded ? "chevron-up" : "chevron-down"}
-            size={20}
-            color="#4CAF50"
-            style={{ marginLeft: 6 }}
-          />
-        </View>
-      </TouchableOpacity>
+          </Text> */}
 
-      {/* Expanded Content */}
-      {isExpanded && (
-        <View style={{ marginTop: 5 }}>
-          {/* ✅ Product Items List */}
-          {item.items?.map((it) => (
-            <View key={`${item.order_id}-${it.id}`} style={styles.itemRow}>
-              {/* Product Image */}
+
+            <Text
+              style={[
+                styles.status,
+                statusStyles[statusKey] || statusStyles.cancelled,
+                { color: statusStyles[statusKey]?.color || "#C62828" },
+              ]}
+            >
+              {displayStatus}
+            </Text>
+
+            <Ionicons
+              name={isExpanded ? "chevron-up" : "chevron-down"}
+              size={20}
+              color="#4CAF50"
+              style={{ marginLeft: 6 }}
+            />
+          </View>
+        </TouchableOpacity>
+
+        {/* Expanded Content */}
+        {isExpanded && (
+          <View style={{ marginTop: 5 }}>
+            {/* ✅ Product Items List */}
+            {item.items?.map((it) => (
+              <View key={`${item.order_id}-${it.id}`} style={styles.itemRow}>
+                {/* Product Image */}
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.navigate("Home", {
+                      screen: "ProductDetailPage",
+                      params: { product: it.product },
+                    })
+                  }
+                  activeOpacity={0.8}
+                >
+                  <Image
+                    source={{
+                      uri:
+                        it.product?.model_image ||
+                        "https://via.placeholder.com/100x100.png?text=No+Image",
+                    }}
+                    style={styles.itemImage}
+                  />
+                </TouchableOpacity>
+
+                {/* Product Info */}
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={styles.productName} numberOfLines={1}>
+                    {it.product?.model_name || "Unnamed Product"}
+                  </Text>
+                  <Text style={styles.segment}>
+                    {it.product?.segment || "General"}
+                  </Text>
+                  <Text style={styles.price}>
+                    ₹{it.price} × {it.quantity}
+                  </Text>
+                </View>
+              </View>
+            ))}
+
+            {/* ✅ Delivery Status Bar */}
+            {/* <OrderStatusBar deliverystatus={item.deliverystatus} /> */}
+            <OrderStatusBar
+  deliverystatus={item.deliverystatus}
+  status={item.status}
+  refund_status={item.refund_status}
+/>
+
+
+            {/* ✅ Order Footer */}
+            <View style={styles.footer}>
+              <Text style={styles.amount}>Total: ₹{item.order_total}</Text>
               <TouchableOpacity
+                style={styles.detailsButton}
                 onPress={() =>
                   navigation.navigate("Home", {
-                    screen: "ProductDetailPage",
-                    params: { product: it.product },
+                    screen: "OrderDetails",
+                    params: { order_id: item.order_id },
                   })
                 }
-                activeOpacity={0.8}
               >
-                <Image
-                  source={{
-                    uri:
-                      it.product?.model_image ||
-                      "https://via.placeholder.com/100x100.png?text=No+Image",
-                  }}
-                  style={styles.itemImage}
-                />
+                <Ionicons name="receipt-outline" size={18} color="#fff" />
+                <Text style={styles.detailsText}>View Details</Text>
               </TouchableOpacity>
-
-              {/* Product Info */}
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.productName} numberOfLines={1}>
-                  {it.product?.model_name || "Unnamed Product"}
-                </Text>
-                <Text style={styles.segment}>
-                  {it.product?.segment || "General"}
-                </Text>
-                <Text style={styles.price}>
-                  ₹{it.price} × {it.quantity}
-                </Text>
-              </View>
             </View>
-          ))}
-
-          {/* ✅ Delivery Status Bar */}
-          <OrderStatusBar deliverystatus={item.deliverystatus} />
-
-          {/* ✅ Order Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.amount}>Total: ₹{item.order_total}</Text>
-            <TouchableOpacity
-              style={styles.detailsButton}
-              onPress={() =>
-                navigation.navigate("Home", {
-                  screen: "OrderDetails",
-                  params: { order_id: item.order_id },
-                })
-              }
-            >
-              <Ionicons name="receipt-outline" size={18} color="#fff" />
-              <Text style={styles.detailsText}>View Details</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      )}
-    </View>
+        )}
+      </View>
     );
   };
 
@@ -441,42 +510,42 @@ const styles = StyleSheet.create({
   statusTextInactive: { color: "#999" },
 
   itemRow: {
-  flexDirection: "row",
-  alignItems: "center",
-  backgroundColor: "#fafafa",
-  padding: 8,
-  borderRadius: 8,
-  marginBottom: 8,
-  elevation: 1,
-  shadowColor: "#000",
-  shadowOpacity: 0.05,
-  shadowOffset: { width: 0, height: 1 },
-  shadowRadius: 2,
-},
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fafafa",
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 8,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+  },
 
-itemImage: {
-  width: 80,
-  height: 80,
-  borderRadius: 10,
-  backgroundColor: "#f2f2f2",
-},
+  itemImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    backgroundColor: "#f2f2f2",
+  },
 
-productName: {
-  fontWeight: "600",
-  color: "#222",
-  fontSize: 15,
-},
+  productName: {
+    fontWeight: "600",
+    color: "#222",
+    fontSize: 15,
+  },
 
-segment: {
-  color: "#777",
-  fontSize: 13,
-  marginVertical: 2,
-},
+  segment: {
+    color: "#777",
+    fontSize: 13,
+    marginVertical: 2,
+  },
 
-price: {
-  color: "#1a8e55",
-  fontWeight: "700",
-  fontSize: 14,
-},
+  price: {
+    color: "#1a8e55",
+    fontWeight: "700",
+    fontSize: 14,
+  },
 
 });
